@@ -142,7 +142,7 @@ if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP)
                     src/gpu/shaders/package.cpp src/gpu/shaders/shader_cache_data.cpp)
         target_include_directories(native_engine_test_units PUBLIC src)
         target_link_libraries(native_engine_test_units PUBLIC native_renderer_plume_vulkan
-                              narutorise_smolv fmt::fmt)
+                              narutorise_smolv libzstd_static fmt::fmt)
         if(NARUTORISE_NATIVE_D3D12)
             target_sources(native_engine_test_units PRIVATE src/gpu/backend/d3d12/backend.cpp)
             target_link_libraries(native_engine_test_units PUBLIC native_renderer_plume)
@@ -198,7 +198,7 @@ if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP)
         add_executable(native_shader_package_test src/gpu/shaders/tests/package_test.cpp
                        src/gpu/shaders/package.cpp src/gpu/shaders/shader_cache_data.cpp)
         target_include_directories(native_shader_package_test PRIVATE src)
-        target_link_libraries(native_shader_package_test PRIVATE narutorise_smolv fmt::fmt)
+        target_link_libraries(native_shader_package_test PRIVATE narutorise_smolv libzstd_static fmt::fmt)
         target_compile_definitions(native_shader_package_test PRIVATE NARUTORISE_SHADER_CACHE_SPIRV=1 NOMINMAX
                                    WIN32_LEAN_AND_MEAN)
         add_dependencies(native_shader_package_test narutorise_native_shader_cache)
