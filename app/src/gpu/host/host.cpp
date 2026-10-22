@@ -9,6 +9,7 @@
 #include "gpu/settings.h"
 #include "gpu/diagnostics/crash_dump.h"
 #include "gpu/diagnostics/heap_watch.h"
+#include "wine.h"
 #include <cstdlib>
 #include <rex/logging.h>
 #include <rex/system/interfaces/graphics.h>
@@ -74,6 +75,10 @@ void Configure(rex::RuntimeConfig& config) {
     REXLOG_ERROR("[narutorise] Requested native_backend '{}' is unavailable in this build. No backend fallback.", backend);
     std::_Exit(88);
   }
+#if defined(NARUTORISE_NATIVE_VULKAN)
+  if (const char* wine = narutorise::WineVersion())
+    REXLOG_INFO("[narutorise] Wine {} detected: the native renderer runs on Vulkan", wine);
+#endif
   REXLOG_INFO("[narutorise] Renderer: native; backend: {}{}", backend, path.empty() ? "" : ", with the journal");
   gpu::crash_dump::Install();  // REX_NATIVE_CRASH_DUMP=1 (crash_dump.h).
   gpu::heap_watch::Install();  // REX_NATIVE_HEAP_WATCH=1 (heap_watch.h).

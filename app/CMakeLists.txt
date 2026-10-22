@@ -24,6 +24,7 @@ set(NARUTORISE_SOURCES
     src/graphics_device.cpp
     src/crash_report.cpp
     src/window_title.cpp
+    src/wine.cpp
     src/mouse_camera.cpp
     src/mods/translation_data.cpp
     src/mods/translation_mod.cpp
@@ -36,11 +37,10 @@ add_subdirectory(../third_party/nlohmann_json third_party/nlohmann_json)
 # The executable keeps the Xenos plugin as the other renderer.
 option(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP "Build the native renderer next to the Xenos plugin" OFF)
 # The host graphics APIs of the native renderer, apart from the SDK's
-# REXGLUE_USE_VULKAN (the Xenos plugin's). The engine runs on D3D12; the Vulkan
-# backend is built with its host tests while its draws and presentation are
-# written.
+# REXGLUE_USE_VULKAN (the Xenos plugin's). Native builds include both APIs by
+# default, and the launcher offers the same backends as the game.
 option(NARUTORISE_NATIVE_D3D12 "Build the D3D12 backend of the native renderer" ON)
-option(NARUTORISE_NATIVE_VULKAN "Build the Vulkan backend of the native renderer" OFF)
+option(NARUTORISE_NATIVE_VULKAN "Build the Vulkan backend of the native renderer" ON)
 if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP AND NOT NARUTORISE_NATIVE_D3D12 AND NOT NARUTORISE_NATIVE_VULKAN)
     message(FATAL_ERROR "Enable at least one native backend: NARUTORISE_NATIVE_D3D12 or NARUTORISE_NATIVE_VULKAN")
 endif()
@@ -142,7 +142,7 @@ if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP)
                     src/gpu/shaders/package.cpp src/gpu/shaders/shader_cache_data.cpp)
         target_include_directories(native_engine_test_units PUBLIC src)
         target_link_libraries(native_engine_test_units PUBLIC native_renderer_plume_vulkan
-                              narutorise_smolv fmt::fmt)
+                              narutorise_smolv libzstd_static fmt::fmt)
         if(NARUTORISE_NATIVE_D3D12)
             target_sources(native_engine_test_units PRIVATE src/gpu/backend/d3d12/backend.cpp)
             target_link_libraries(native_engine_test_units PUBLIC native_renderer_plume)
@@ -198,7 +198,7 @@ if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP)
         add_executable(native_shader_package_test src/gpu/shaders/tests/package_test.cpp
                        src/gpu/shaders/package.cpp src/gpu/shaders/shader_cache_data.cpp)
         target_include_directories(native_shader_package_test PRIVATE src)
-        target_link_libraries(native_shader_package_test PRIVATE narutorise_smolv fmt::fmt)
+        target_link_libraries(native_shader_package_test PRIVATE narutorise_smolv libzstd_static fmt::fmt)
         target_compile_definitions(native_shader_package_test PRIVATE NARUTORISE_SHADER_CACHE_SPIRV=1 NOMINMAX
                                    WIN32_LEAN_AND_MEAN)
         add_dependencies(native_shader_package_test narutorise_native_shader_cache)

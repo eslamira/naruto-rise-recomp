@@ -244,7 +244,7 @@ void StartPipelinePrecompile() {
       std::lock_guard lock(p.mutex);
       failure = p.first_failure.empty() ? "null" : p.first_failure;
     }
-    host::Record("native-d3d-pipeline-precompile", fmt::format(
+    const std::string summary = fmt::format(
         "\"list\":{},\"threads\":{},\"created\":{},\"present\":{},\"failed\":{},\"unresolved\":{},\"mismatched\":{},"
         "\"alpha_to_coverage\":{},\"alpha_test\":{},\"world_posted\":{},\"world_present\":{},\"stopped\":{},\"ms\":{},"
         "\"swap\":{},\"first_failure\":{}",
@@ -252,7 +252,10 @@ void StartPipelinePrecompile() {
         p.threads, p.created.load(), p.present.load(), p.failed.load(), p.unresolved.load(), p.mismatched.load(),
         p.alpha_to_coverage.load(), p.alpha_test.load(), p.world_posted.load(), p.world_present.load(), stopped,
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - p.started).count(),
-        swaps.load(), failure));
+        swaps.load(), failure);
+    host::Record("native-d3d-pipeline-precompile", summary);
+    // The product has no journal: how long the list took goes to the SDK log.
+    if (!host::Journaled()) REXLOG_INFO("[narutorise] Pipeline precompile: {{{}}}", summary);
   });
   host::Record("native-d3d-pipeline-precompile-start", fmt::format(
       "\"started\":{},\"list\":{},\"layouts\":{},\"worlds\":{},\"threads\":{},\"identity\":\"{}\",\"swap\":{}",

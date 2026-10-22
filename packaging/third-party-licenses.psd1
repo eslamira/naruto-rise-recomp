@@ -100,6 +100,9 @@
         @{ Name = 'XenosRecomp (shader translation, shader_common.h in the embedded shaders)'; License = 'MIT'; Condition = 'NativeRenderer'
            Url = 'https://github.com/hedge-dev/XenosRecomp'; File = 'tools/xenosrecomp/LICENSE.md'; Target = 'xenosrecomp.txt'
            Usage = 'narutorise.exe' }
+        @{ Name = 'Zstandard'; License = 'BSD-3-Clause'; Condition = 'NativeRenderer'
+           Url = 'https://github.com/facebook/zstd'; File = 'tools/xenosrecomp/thirdparty/zstd/LICENSE'; Target = 'zstd.txt'
+           Usage = 'narutorise.exe (embedded shader package decoder)' }
         @{ Name = 'volk'; License = 'MIT'; Condition = 'NativeVulkan'
            Url = 'https://github.com/zeux/volk'; File = 'packaging/licenses/volk.txt'; Target = 'volk.txt'
            Usage = 'narutorise.exe (Vulkan loader)' }

@@ -10,6 +10,7 @@
 #include "graphics_devices.h"
 #include "localization.h"
 #include "pages/key_mapping.h"
+#include "wine.h"
 #include "pages/pages.h"
 #include "pages/settings_form.h"
 #include "widgets.h"
@@ -79,7 +80,11 @@ void RenderDisplayGroup(OptionList& list, PageContext& context) {
   if (native) {
     std::vector<const char*> names;
     std::vector<std::string> values;
-    if (kNativeD3d12Built) { names.push_back("Direct3D 12"); values.emplace_back("d3d12"); }
+    // Under Wine the game runs on Vulkan only (wine.h).
+    if (kNativeD3d12Built && !(kNativeVulkanBuilt && narutorise::WineVersion())) {
+      names.push_back("Direct3D 12");
+      values.emplace_back("d3d12");
+    }
     if (kNativeVulkanBuilt) { names.push_back("Vulkan"); values.emplace_back("vulkan"); }
     int backend = -1;
     for (size_t i = 0; i < values.size(); ++i) if (values[i] == config.native_backend) backend = int(i);
