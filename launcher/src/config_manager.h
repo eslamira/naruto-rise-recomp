@@ -13,12 +13,23 @@ inline constexpr bool kNativeRendererBuilt = true;
 #else
 inline constexpr bool kNativeRendererBuilt = false;
 #endif
+#if defined(NARUTORISE_LAUNCHER_NATIVE_VULKAN)
+inline constexpr bool kNativeVulkanBuilt = true;
+#else
+inline constexpr bool kNativeVulkanBuilt = false;
+#endif
+#if defined(NARUTORISE_LAUNCHER_NATIVE_D3D12_DISABLED)
+inline constexpr bool kNativeD3d12Built = false;
+#else
+inline constexpr bool kNativeD3d12Built = true;
+#endif
 
 struct GameConfig {
   std::string gpu_plugin = "xenos";
-  // "native" (Direct3D 12, the default) or "xenos" (the emulated GPU); saved
-  // only when the executable carries the native renderer.
+  // Native-capable launchers always save "native"; the visible selector is
+  // native_backend (Direct3D 12, then Vulkan, when compiled).
   std::string renderer = "native";
+  std::string native_backend = kNativeD3d12Built ? "d3d12" : "vulkan";
   // The graphics card by its name, for both renderers; empty = automatic.
   std::string graphics_device = "";
   bool d3d12_readback_resolve = true;
@@ -26,6 +37,8 @@ struct GameConfig {
 
   // Game language: 1 = English, 4 = French, 3 = German, 5 = Spanish, 6 = Italian.
   std::uint32_t user_language = 1;
+  // Selected translation package under mods/; empty selects an official language.
+  std::string translation_mod;
 
   bool log_verbose = false;
   std::string log_level = "info";

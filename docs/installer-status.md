@@ -14,6 +14,7 @@ This document lists available tests and the verification workflow. The existence
 | `packaging/tests/test_dlc_runtime.py` | Opt-in startup test of the base game and each character DLC engine; needs user-supplied game files and content ([DLCs](dlc.md#6-startup-regression-test)) |
 | `launcher/tests/test_config_manager.cpp` | Independent game/interface language persistence and configuration compatibility |
 | `launcher/tests/test_localization.cpp` | Seven complete translations, language order, codes, and formatting placeholders |
+| `launcher/tests/test_update_ui.cpp` + `packaging/tests/validate_launcher_update.py` | Real launcher dialogs, download verification, real Inno update, restart and preservation under a private test AppId |
 
 After building the required binaries, run from the repository root:
 
@@ -44,13 +45,77 @@ See the test sources for requirements and compiler paths. ISO fixtures are synth
 - Run the portable package and select an extracted game folder.
 - Verify the installer starts in English and offers English, Portuguese, French, German, Spanish, Italian, and Russian in that order.
 - Switch all seven launcher languages, including Cyrillic text, graphics settings, and 16:9/ultrawide aspect ratios.
-- Confirm Portuguese and Russian are interface options only and the five native game language selections persist independently.
+- Confirm the bundled **Português (Brasil)** translation appears alongside the five native game languages on new installations and updates, without changing the saved selection. Interface language remains independent.
+- Update an older bundled translation and check that other mod packages and personal files remain intact.
 - Import DLC and launch a build containing `narutorise_ai2c2.dll`.
 - For builds with the native renderer: launch once with each renderer, check that the options of the other renderer are greyed out, and play with the frame rate at 30, 60, and 120.
 - Check saves, logs, and cache in the documented locations.
 - Uninstall and confirm user data preservation.
 
 Record the version, environment, command/procedure, result, and log. Real ISO compatibility and the installer's visual behavior require manual verification in addition to automated fixtures.
+
+## Launcher update validation — 2026-10-20
+
+The complete launcher-to-Setup workflow passed for both registered and portable
+copies, updating `0.2.0-beta.1` to `0.2.0-beta.2` in an isolated directory whose
+name contains spaces and Portuguese accents. No release was generated or
+published. Local fixture installers use the real `installer.iss` code with a
+unique test AppId, a private destination and no shortcut entries. Their game
+binaries and user data are synthetic; the updated launcher is the actual build.
+
+The opt-in UI test includes the production launcher's main loop, rendering,
+confirmation dialogs and installer handoff. It injects input into ImGui only,
+without sending input to the desktop. Its download services stream the local
+fixture through the production size/hash/file-lock pipeline. The registered
+case redirects HKCU only inside the test launcher process; Setup independently
+uses its private test AppId. Production has no UI or command-line switch for
+these fixture services, and the test executable is excluded from normal builds.
+
+Verified in both runs:
+
+- **No** on the first confirmation starts no transfer; **Yes** starts one.
+- The second confirmation appears only after verification; **No** keeps the
+  launcher running and re-opening it does not download the file again.
+- The second **Yes** saves configuration and closes the launcher after Setup
+  starts. The wizard receives the correct destination and Portuguese language.
+- Setup completes the update and reopens the updated launcher. Version marker,
+  registry version, replacement binaries and bundled translation match the fixture.
+- Configuration values survive the whole flow; Setup preserves the saved TOML
+  byte-for-byte. Eleven sentinel files covering game folders, saves, installed
+  and pending DLC, community mods, logs and personal files survive update and
+  uninstall. Test registrations are removed afterward.
+- The production registration and hashes of the executables, configuration and
+  version marker in `C:\games\Naruto` remain unchanged.
+
+The first run exposed a pre-existing Unicode path defect: the launcher supplied
+an ANSI path to the TOML parser, failed to load settings in an accented folder,
+then saved defaults. Configuration now opens `std::filesystem::path` directly
+through a stream; the regression test includes Portuguese and Japanese path
+characters and unmanaged keys. Font and cover paths now use UTF-8 with their
+respective readers. The configuration regression and both complete update runs
+passed after these fixes.
+
+GitHub transport was checked separately with
+`narutorise_update_installer_test.exe --live`: the real published installer
+(44,516,764 bytes) downloaded and passed SHA-256 verification without execution.
+The public installer itself was not installed into the user's real game folder.
+
+Reproduce from the VS x64 development environment:
+
+```powershell
+cmake --build app/out/build/win-amd64-release --target narutorise_launcher narutorise_update_ui_test narutorise_config_manager_test
+& app/out/build/win-amd64-release/narutorise_config_manager_test.exe out/update-config-regression
+python packaging/tests/validate_launcher_update.py
+python packaging/tests/validate_launcher_update.py --portable
+```
+
+Local evidence (JSON results, launcher events, wizard pages and cleanup checks):
+
+- Registered: `out/update-validation-20261020-181708-32adca/`.
+- Portable: `out/update-validation-20261020-181748-a29af1/`.
+
+These fixtures validate updating and preserving data, not gameplay or real ISO
+compatibility. Test packages and logs remain under `out/` for inspection.
 
 ## Update verification — 2026-10-08
 

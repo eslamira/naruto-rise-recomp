@@ -26,6 +26,22 @@ int main(int argc, char** argv) {
     std::filesystem::create_directories(root);
     const auto path = root / "narutorise.toml";
 
+    const auto unicode_dir = root / std::filesystem::path(u8"instalação-設定");
+    std::filesystem::create_directories(unicode_dir);
+    const auto unicode_path = unicode_dir / "narutorise.toml";
+    Write(unicode_path, "fullscreen = false\nlauncher_language = 'pt_BR'\nuser_language = 3\n"
+                        "personal_setting = 'keep'\nuser_data_root = 'user'\n");
+    GameConfig unicode_config;
+    Require(ConfigManager::Load(unicode_path, unicode_config), "Unicode install path failed to load settings");
+    Require(!unicode_config.fullscreen && unicode_config.launcher_language == "pt_BR" && unicode_config.user_language == 3,
+            "Unicode install path reset user preferences");
+    Require(ConfigManager::Save(unicode_path, unicode_config), "Unicode install path failed to save settings");
+    std::ifstream unicode_file(unicode_path, std::ios::binary);
+    const auto unicode_table = toml::parse(unicode_file);
+    Require(unicode_table["personal_setting"].value<std::string>() == "keep" &&
+                unicode_table["user_data_root"].value<std::string>() == "user",
+            "Saving through a Unicode path erased unmanaged user settings");
+
     Write(path, "launcher_language = 'pt_BR'\n");
     GameConfig legacy;
     Require(ConfigManager::Load(path, legacy), "Legacy configuration failed to load");
@@ -108,10 +124,28 @@ int main(int argc, char** argv) {
     native.msaa_samples = 2;
     Require(ConfigManager::Save(path, native), "Native renderer options failed to save");
     const auto saved = toml::parse_file(path.string());
-    Require(saved["renderer"].value<std::string>() == (kNativeRendererBuilt ? "xenos" : "native"),
-            "Renderer choice was not saved as built");
+    Require(saved["renderer"].value<std::string>() == "native",
+            "The native-capable launcher must save the native renderer");
     Require(saved["msaa_samples"].value<int>() == (kNativeRendererBuilt ? 2 : 8),
             "Native renderer option was not saved as built");
+    Write(path, "renderer = 'xenos'\nnative_backend = 'vulkan'\n");
+    GameConfig migrated;
+    Require(ConfigManager::Load(path, migrated) &&
+                migrated.renderer == (kNativeRendererBuilt ? "native" : "xenos") &&
+                migrated.native_backend == "vulkan",
+            "Legacy Xenos selection did not migrate while preserving the native API");
+    Require(ConfigManager::Save(path, migrated), "Migrated renderer failed to save");
+    Require(toml::parse_file(path.string())["renderer"].value<std::string>() ==
+                (kNativeRendererBuilt ? "native" : "xenos"),
+            "Migrated renderer did not persist");
+    for (const auto* api : {"d3d12", "vulkan"}) {
+      if (!kNativeRendererBuilt) continue;
+      migrated.native_backend = api;
+      Require(ConfigManager::Save(path, migrated), "Native API failed to save");
+      GameConfig restored;
+      Require(ConfigManager::Load(path, restored) && restored.renderer == "native" &&
+                  restored.native_backend == api, "Native API did not survive a round trip");
+    }
     // The graphics card, for both renderers: read and saved by name.
     Write(path, "graphics_device = 'NVIDIA GeForce RTX 4060 Laptop GPU'\n");
     GameConfig device;

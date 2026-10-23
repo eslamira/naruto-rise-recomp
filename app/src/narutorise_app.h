@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <toml++/toml.hpp>
 
@@ -27,6 +28,7 @@
 #include "crash_report.h"
 #include "graphics_device.h"
 #include "input_replay.h"
+#include "mods/translation_mod.h"
 #include "ultrawide.h"
 #include "window_title.h"
 #ifdef NARUTORISE_NATIVE_RENDERER_BOOTSTRAP
@@ -146,6 +148,26 @@ class FpsOverlayDialog : public rex::ui::ImGuiDialog {
   double smoothed_ft_ = 0.0;
   double smoothed_host_fps_ = 0.0;
   GuestStatsProvider guest_stats_;
+};
+
+class FullscreenShortcuts : public rex::ui::WindowInputListener {
+ public:
+  void OnKeyDown(rex::ui::KeyEvent& e) override {
+    using rex::ui::VirtualKey;
+    if (e.virtual_key() != VirtualKey::kF11 &&
+        !(e.virtual_key() == VirtualKey::kReturn && e.is_alt_pressed())) {
+      return;
+    }
+
+    // Consume repeats too, so holding the shortcut neither toggles repeatedly
+    // nor sends Enter to the game's keyboard controller or an overlay.
+    e.set_handled(true);
+    if (!e.prev_state() && e.target()) {
+      // ReXApp's fullscreen callback applies the change on this UI thread.
+      rex::cvar::SetFlagByName("fullscreen",
+                              e.target()->IsFullscreen() ? "false" : "true");
+    }
+  }
 };
 
 class NarutoriseApp : public rex::ReXApp {
@@ -292,9 +314,15 @@ class NarutoriseApp : public rex::ReXApp {
   }
 
   void OnPostSetup() override {
+    narutorise::translation::Initialize(rex::filesystem::GetExecutableFolder());
     narutorise::crash_report::Install();  // After the SDK's exception handler.
     // The game's name and version in place of the SDK's name and build stamp.
     if (window()) window()->SetTitle(narutorise::WindowTitle());
+    if (window()) {
+      // Window shortcuts take priority over overlays and keyboard emulation.
+      window()->AddInputListener(&fullscreen_shortcuts_,
+                                 std::numeric_limits<size_t>::max());
+    }
     RestoreXenosAdapter();  // The provider exists by now.
     SeedShaderStorage();
     AutoInstallDlc();
@@ -345,6 +373,7 @@ class NarutoriseApp : public rex::ReXApp {
 #endif
 
   void OnShutdown() override {
+    if (window()) window()->RemoveInputListener(&fullscreen_shortcuts_);
     rex::cvar::UnregisterChangeCallbacks("ultrawide_target_aspect");
     rex::ui::UnregisterBind("bind_exit_game");
     rex::ui::UnregisterBind("bind_fps_overlay");
@@ -758,5 +787,6 @@ class NarutoriseApp : public rex::ReXApp {
     }
   }
 
+  FullscreenShortcuts fullscreen_shortcuts_;
   std::unique_ptr<FpsOverlayDialog> fps_overlay_;
 };

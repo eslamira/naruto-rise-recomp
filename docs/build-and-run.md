@@ -41,6 +41,8 @@ pwsh -File .\setup.ps1
 
 The script checks tools, initializes submodules, downloads `extract-xiso.exe`, and applies the patches in `patches/sdk/`. The SDK configured in `.gitmodules` is `https://github.com/rexglue/rexglue-sdk.git`.
 
+The translation loader and launcher use the pinned JSON parser in `third_party/nlohmann_json`, through the `narutorise::json` CMake target. This application dependency does not require the SDK's private inja headers or a separate download.
+
 If the SDK and extractor are already available, still make sure the local patches have been applied before building the SDK:
 
 ```powershell
@@ -114,26 +116,36 @@ The complete build includes the game, launcher, installer helper, assets, config
 The [native renderer](renderers.md) is built into `narutorise.exe` when the application is configured with `NARUTORISE_NATIVE_RENDERER_BOOTSTRAP=ON`. The executable keeps the Xenos plugin, and the launcher lets you choose the renderer ([Renderer](configuration.md#renderer)). It needs:
 
 - the XenosRecomp submodules in `tools/xenosrecomp/thirdparty`, fetched by `setup.ps1` (or `git submodule update --init --recursive`);
-- a clean [Plume](https://github.com/renderbag/plume) checkout at commit `d72379344dacd3dbf9f810f92ddc87e6de1845b1`, with its D3D12 Memory Allocator submodule at `9ef66bc14edd10dee0de3a545b98578363552f66`. Configuration stops if either one is at another commit or has local changes;
+- a clean [Plume](https://github.com/renderbag/plume) checkout at commit `d72379344dacd3dbf9f810f92ddc87e6de1845b1`, with its D3D12 Memory Allocator, Volk, Vulkan Headers and Vulkan Memory Allocator submodules initialized at the pinned revisions. Configuration stops if a required dependency is at another commit or has local changes;
 - `xeshader.sdb` from your game files. The build reads it from `game/` at the repository root (`NARUTORISE_GAME_DIR`); point the variable at `game_root/` when your files are there;
-- Python 3 on `PATH`.
+- Python 3 and `spirv-val` on `PATH` (or provide the validator with `-DNARUTORISE_SPIRV_VAL=<path>`).
 
 ```powershell
 git clone https://github.com/renderbag/plume.git out/plume
 git -C out/plume checkout d72379344dacd3dbf9f810f92ddc87e6de1845b1
-git -C out/plume submodule update --init contrib/D3D12MemoryAllocator
+git -C out/plume submodule update --init contrib/D3D12MemoryAllocator contrib/volk contrib/Vulkan-Headers contrib/VulkanMemoryAllocator
 
 $sdkPrefix = (Resolve-Path .\sdk\out\install\win-amd64).Path
 $plume = (Resolve-Path .\out\plume).Path
 $gameDir = (Resolve-Path .\game_root).Path
 cmake --preset win-amd64-release -S app -B app/out/build/win-amd64-release "-DCMAKE_PREFIX_PATH=$sdkPrefix" `
-  -DNARUTORISE_NATIVE_RENDERER_BOOTSTRAP=ON "-DNATIVE_RENDERER_PLUME_SOURCE=$plume" "-DNARUTORISE_GAME_DIR=$gameDir"
+  -DNARUTORISE_NATIVE_RENDERER_BOOTSTRAP=ON -DNARUTORISE_NATIVE_VULKAN=ON "-DNATIVE_RENDERER_PLUME_SOURCE=$plume" "-DNARUTORISE_GAME_DIR=$gameDir"
 cmake --build app/out/build/win-amd64-release
 ```
 
 The build translates the game's shaders with the XenosRecomp fork, compiles them with DXC, links the spec constant variants, and embeds the result in `narutorise.exe`, so the native renderer needs no shader compiler at run time. The shader cache derives from your game files and stays out of Git. The build keeps the translated and compiled shaders in `out/shader-store` (`NARUTORISE_SHADER_STORE`; empty disables it) and reuses them while the game files, the XenosRecomp fork, and DXC do not change; deleting the folder only makes the next build slower.
 
-The list of pipelines compiled at startup, `app/src/gpu/shaders/pipeline_cache.inc`, is optional and also stays out of Git, because it is generated from local play sessions. Without it, the build succeeds, and each pipeline compiles in the background the first time it appears, skipping its draws until it is ready.
+Native builds include D3D12 and Vulkan by default. The explicit `-DNARUTORISE_NATIVE_VULKAN=ON` above also enables Vulkan in an existing build folder that cached it as disabled. The build checks the dependency revisions, enables the required device extensions in a separate build copy of Plume, and embeds validated SPIR-V for the game and presentation passes. Use `-DNARUTORISE_NATIVE_D3D12=OFF` for a Vulkan-only native renderer, or `-DNARUTORISE_NATIVE_VULKAN=OFF` for D3D12 only. At least one must be enabled when the native renderer is built.
+
+For a local validation toolchain without installing the Vulkan SDK, the optional
+[`build-validation-layer.ps1`](../tools/native-renderer/vulkan/build-validation-layer.ps1)
+helper builds the pinned Khronos validation layer and its dependencies under the
+directory passed with `-Root`. It does not install the layer system-wide. Point
+`NARUTORISE_SPIRV_VAL` at the resulting `spirv-val.exe` when configuring the game.
+
+The launcher lists only the native APIs included in that build. `native_backend = "vulkan"` selects Vulkan; an omitted key selects D3D12 when available, otherwise Vulkan. Explicitly requesting an absent API fails without switching APIs. Vulkan needs the system loader and a compatible driver, including extended dynamic state and swapchain maintenance1 (KHR or EXT) for presentation retirement. Users do not need DXC, Vulkan SDK, `spirv-val` or validation layers.
+
+The list of pipelines compiled at startup, `app/src/gpu/shaders/pipeline_cache.inc`, is optional and also stays out of Git, because it is generated from local play sessions. Without it, the build succeeds; a missing pipeline is created or awaited before its draw. Normal rendering does not skip draws while pipelines compile.
 
 ### Output
 

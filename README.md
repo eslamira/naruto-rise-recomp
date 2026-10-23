@@ -47,10 +47,11 @@ The current build and distribution workflow targets **Windows x64**. Presets for
 
 - **DLC support**, with launcher import and STFS package installation at game startup. Character DLCs use additional recompiled engine modules.
 - **Game language selection**, with English, French, German, Spanish, and Italian options in the launcher; available text and voices depend on your game files.
+- **External translation mods**, selected in the launcher's game language list, with UTF-8 text replacements by ID and fallback to the original English text. Releases include the complete Brazilian Portuguese package. See the [translation mod guide](docs/translation-mods.md).
 
 **Launcher and distribution**
 
-- **Launcher** with settings grouped into Game, Display, Quality, Controls, and Advanced, a description of each option, DLC import, and the installed version. It is available in seven languages.
+- **Launcher** with settings grouped into Game, Display, Quality, Controls, and Advanced, a description of each option, DLC import, the installed version, and automatic update notices from GitHub Releases. It is available in seven languages.
 - **FPS and frametime overlay** (`F1`, Xenos renderer) showing the guest (game) and host frame rates, and an option to skip intro videos.
 - **Shader caches:** the bundled Xenos shader storage is copied into the user cache; the native renderer's shaders are translated when the port is built and embedded in the executable.
 - **Portable distribution and Windows installer**, with optional ISO import and a manual update mode for existing installations. The installer is also available in seven languages.
@@ -99,7 +100,15 @@ For additional content, see the [DLC guide](docs/dlc.md).
 
 ## Updating
 
-Updates are installed manually with `NarutoRiseInstaller.exe` from a newer Windows release on the [Releases page](https://github.com/jorjbarbosa/naruto-rise-recomp/releases/latest). Use the same installer for a new installation or to update an existing copy.
+The launcher checks GitHub's latest published release in the background when opened. The update notice has two actions: **Download and install** and **What's new**. **Check for updates**, below the cover, checks manually. Releases marked as pre-releases on GitHub are excluded; a tag containing `beta` is still eligible when its release is published normally.
+
+**Download and install** first asks **Yes / No** before downloading. After confirming, the launcher downloads the installer and verifies its size and SHA-256. A second **Yes / No** dialog asks permission to run it. **Yes** saves your settings, opens Setup in update mode for this folder and closes the launcher. **No** keeps the launcher open; the verified download remains available for another attempt during this session. Close the game and other launchers using the same folder before installing. Setup remains interactive and offers to reopen the launcher when finished. During download, the first button becomes **Cancel download**.
+
+For a portable copy, the first dialog explicitly explains that using Setup registers the copy as a Windows application in the same folder. Both `narutorise.exe` and `narutorise_launcher.exe` must be present to run the update. The launcher uses the installer only; ZIP updates still require manual extraction and are available on the release page through **What's new**.
+
+Successful checks are cached for six hours; failed checks are retried on a later launch after fifteen minutes. Manual checks bypass the cache, with a one-minute cooldown after each request. The game remains playable without internet. Older launchers need one manual update to receive this feature.
+
+To update manually, download `NarutoRiseInstaller.exe` from the [Releases page](https://github.com/jorjbarbosa/naruto-rise-recomp/releases/latest). Use the same installer for a new installation or to update an existing copy.
 
 1. Close the game and launcher.
 2. Run the new `NarutoRiseInstaller.exe` and choose the installer language.

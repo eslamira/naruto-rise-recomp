@@ -20,11 +20,13 @@ void LoadFonts(const std::filesystem::path& base_dir) {
   const ImWchar* glyph_ranges = glyph_ranges_storage.Data;
   // Bundle the same typeface on every machine; never rely on a Windows font.
   if (std::filesystem::exists(regular)) {
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(regular.string().c_str(), 17.0f, nullptr, glyph_ranges);
+    const auto utf8 = regular.u8string();
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(reinterpret_cast<const char*>(utf8.c_str()), 17.0f, nullptr, glyph_ranges);
   }
   if (!io.FontDefault) io.FontDefault = io.Fonts->AddFontDefault();
   if (std::filesystem::exists(bold)) {
-    io.Fonts->AddFontFromFileTTF(bold.string().c_str(), 17.0f, nullptr, glyph_ranges);
+    const auto utf8 = bold.u8string();
+    io.Fonts->AddFontFromFileTTF(reinterpret_cast<const char*>(utf8.c_str()), 17.0f, nullptr, glyph_ranges);
   }
 }
 

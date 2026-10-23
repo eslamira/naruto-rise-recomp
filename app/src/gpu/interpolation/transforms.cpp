@@ -53,9 +53,10 @@ constexpr size_t kCameraFloats = 16;
 using Matrix = std::array<float, 16>;
 using Camera = std::array<float, kCameraFloats>;
 // An engine matrix is 68 bytes: the 16 floats and a type word at +64. With
-// kScaleFlag in it, the fourth column (+12, +28, +44) scales the rows; without
-// it the column is not read and may hold anything (zeros on the indicators
-// over the characters at full size).
+// kScaleFlag in it, the fourth column (+12, +28, +44) scales the rows. Without
+// it, the renderer still copies the column into the full matrix inverted for
+// lighting (821013E8 and 82100CF8). Keep the tick's values: forcing a scale of
+// 1 into this column makes the light direction depend on the object position.
 constexpr uint32_t kTypeOffset = 64, kScaleFlag = 8;
 struct Track {
   uint32_t matrix = 0;
@@ -88,10 +89,6 @@ struct Written {
   uint32_t address = 0, count = 0;
   Matrix value{}, live{};
   uint32_t object = 0;  // An object matrix's object, 0 otherwise.
-  // The type word written with the scale flag (the blend scales a matrix the
-  // tick's does not), and the live one.
-  bool type_written = false;
-  uint32_t type_value = 0, type_live = 0;
 };
 
 int enabled = -1, bones_enabled = -1, turned_enabled = -1;
@@ -162,11 +159,6 @@ void BlendMatrix(const float* a, const float* b, float t, float* out) {
     out[4 * row + 3] = a[4 * row + 3] + (b[4 * row + 3] - a[4 * row + 3]) * t;
   }
   for (int i = 12; i < 16; ++i) out[i] = a[i] + (b[i] - a[i]) * t;
-}
-// The fourth column as the engine reads it: a scale of 1 without the flag.
-Matrix ScaleAsRead(Matrix m, uint32_t type) {
-  if (!(type & kScaleFlag)) m[3] = m[7] = m[11] = 1.0f;
-  return m;
 }
 bool MatrixCut(const Matrix& a, const Matrix& b) {
   if (Distance3(a.data() + 12, b.data() + 12) > kCutDistance) return true;
@@ -475,6 +467,9 @@ void ViewStart(uint8_t* base) {
   std::unordered_set<uint32_t> matrices;
   for (auto& [object, t] : tracks) {
     if (!t.valid || t.tick != tick || t.previous == t.current || !matrices.insert(t.matrix).second) continue;
+    // The fourth column changes meaning with the scale flag. Keep the tick's
+    // matrix during that transition (including billboards reaching full size).
+    if ((t.previous_type ^ t.current_type) & kScaleFlag) continue;
     // In a frame without a tick, a matrix the display turned holds the turn
     // the last view block left (Restore): the interpolated value goes under
     // it again, as the display ran once per state of the logic on the console.
@@ -495,20 +490,9 @@ void ViewStart(uint8_t* base) {
     w.address = t.matrix;
     w.count = 16;
     w.object = object;
-    const Matrix from = ScaleAsRead(t.previous, t.previous_type), to = ScaleAsRead(t.current, t.current_type);
-    BlendMatrix(from.data(), to.data(), alpha, w.value.data());
+    BlendMatrix(t.previous.data(), t.current.data(), alpha, w.value.data());
     std::copy(t.current.begin(), t.current.end(), w.live.begin());
     WriteMatrix(base, w.address, w.value);
-    // The blend scales a matrix the tick's does not (growing to a scale of 1,
-    // which drops the flag): the flag goes with it.
-    uint32_t type = 0;
-    if (!(t.current_type & kScaleFlag) && (w.value[3] != 1.0f || w.value[7] != 1.0f || w.value[11] != 1.0f) &&
-        Read32(base, w.address + kTypeOffset, type) && type == t.current_type) {
-      w.type_written = true;
-      w.type_live = type;
-      w.type_value = type | kScaleFlag;
-      Put32(base, w.address + kTypeOffset, w.type_value);
-    }
     written.push_back(w);
     object_written.insert(w.address);
     ++applied.objects;
@@ -543,9 +527,6 @@ void CameraEntry(uint8_t* base, uint32_t entry) {
 void Restore(uint8_t* base) {
   turned_counts.written += written.size();
   for (const auto& w : written) {
-    uint32_t type = 0;
-    if (w.type_written && Read32(base, w.address + kTypeOffset, type) && type == w.type_value)
-      Put32(base, w.address + kTypeOffset, w.type_live);
     if (PutBack(base, w)) continue;
     ++turned_counts.changed;
     Matrix now;

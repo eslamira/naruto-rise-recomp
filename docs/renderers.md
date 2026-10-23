@@ -8,7 +8,7 @@ The port can draw the game with two renderers, chosen at each launch. This page 
 
 ### Native (default)
 
-The native renderer replaces the GPU emulation. It intercepts the game's Direct3D calls (device, resources, render states, draws, and presents) and issues them with Direct3D 12 through [Plume](https://github.com/renderbag/plume). The game's shaders are translated ahead of time by the XenosRecomp fork in `tools/xenosrecomp/`, compiled when the port is built, and embedded in `narutorise.exe`, so no shader compiler runs during play. Builds that carry a list of the pipelines seen in play compile it at startup; a pipeline outside that list compiles in the background the first time it appears.
+The native renderer replaces the GPU emulation. It intercepts the game's Direct3D calls (device, resources, render states, draws, and presents) and issues them through its Direct3D 12 or Vulkan backend, using [Plume](https://github.com/renderbag/plume). The game's shaders are translated ahead of time by the XenosRecomp fork in `tools/xenosrecomp/`, compiled when the port is built, and embedded in `narutorise.exe`, so no shader compiler runs during play. Builds that carry a list of the pipelines seen in play compile it at startup; a missing pipeline is created or awaited before drawing.
 
 Without the emulation layer, it offers options that Xenos does not have: MSAA, transparency antialiasing, a 1.5× internal resolution, brightness, frame latency, triple buffering, and frame rates above 30.
 
@@ -22,7 +22,7 @@ The ReXGlue SDK's emulation of the Xbox 360 GPU, derived from Xenia. It executes
 
 | | Xenos | Native |
 | --- | --- | --- |
-| Drawing | Emulated Xbox 360 GPU (Direct3D 12 backend) | The game's Direct3D calls on Direct3D 12 |
+| Drawing | Emulated Xbox 360 GPU (Direct3D 12 backend) | The game's Direct3D calls on Direct3D 12 or Vulkan |
 | Shaders | Translated on first appearance, cached per user | Translated at build time, embedded in the executable |
 | Frame rate | The game's: 30, and 60 in fights | 30, 60, or 120 in the launcher; up to 240 in `narutorise.toml` |
 | Aspect ratio | 16:9, 21:9, 32:9 | 16:9, with bars on wider monitors |
@@ -32,15 +32,18 @@ The ReXGlue SDK's emulation of the Xbox 360 GPU, derived from Xenia. It executes
 
 ## Choosing the renderer
 
-Open **Settings → Display → Renderer** in the launcher, or set `renderer` in `narutorise.toml`:
+Open **Settings → Display → Renderer** in the launcher and choose **Direct3D 12** or **Vulkan**. These are the two backends of the native renderer:
 
 ```toml
-renderer = "native"   # or "xenos"
+renderer = "native"
+native_backend = "vulkan"  # or "d3d12"
 ```
 
-Without the key, the native renderer is used. A configuration saved by an earlier build with Xenos selected keeps Xenos until it is changed. The choice takes effect on the next launch. The launcher shows the options of both renderers: those the selected renderer does not use are greyed out and tagged, and the description panel says why. Builds without the native renderer ignore the key and leave its options out of the launcher; see [Build and run](build-and-run.md#native-renderer-optional) to include it.
+The launcher no longer offers Xenos. Opening an old configuration migrates its renderer choice to native, preserving `native_backend` when present, and saving writes `renderer = "native"`. Xenos-specific settings are hidden. The underlying runtime still accepts `renderer = "xenos"` when configured manually and launched without the native-capable launcher. Builds without the native renderer retain their legacy settings; see [Build and run](build-and-run.md#native-renderer-optional).
 
-Both renderers honor the graphics card selected in the launcher. The log names the card in use: `DXGI adapter:` for Xenos, `Native renderer adapter:` for the native renderer.
+Only APIs included in the build are listed. Without `native_backend`, D3D12 is preferred when available, otherwise Vulkan. The graphics card is enumerated by the selected API. The native log identifies the backend, device and driver.
+
+Vulkan's current presentation queue is limited to one pending frame. It requires swapchain maintenance1 (KHR or EXT) so resize and shutdown can prove that presentation no longer uses the old resources. The launcher itself continues using D3D11. Local Vulkan validation currently covers the RX 9070 XT; testing another GPU family remains open.
 
 ## Frame rate
 
@@ -77,6 +80,7 @@ These apply to the native renderer. Report anything else through the [issue trac
 
 | Issue | Details |
 | --- | --- |
+| Options labels missing or displaced | Native captures from 2026-10-19 omit **VIBRATION** and **SUBTITLES** and shift **INVERT VERTICAL CAMERA** horizontally, including with translation mods disabled. Xenos shows the labels correctly. The cause is not established; this is not confined to translation mods. See the local [native baseline](../out/translation-mod/2026-10-19/baseline-native/options.png) and [Xenos comparison](../out/translation-mod/2026-10-19/demo-xenos/options.png). A [2026-10-20 typography test](../out/translation-fixes-20261020-082055/mixed-native/options.png) displayed the missing labels with different text content; this does not establish a renderer fix. |
 | Slow close | With a controller connected, closing the window can leave a game thread waiting; the game gives its threads 3 seconds and then exits. Closing right after a fight has also been slow. |
 | Short pause when something new appears | A pipeline outside the startup list compiles the first time it appears on a given driver, and the draw waits for it instead of skipping it, so a new matchup in Fight Mode can pause for a few tens of milliseconds the first time. The game's loading screens give that compilation the highest priority. |
 | Light glows | The game uses occlusion queries only for light glows, and the native renderer answers them with a fixed value: a glow behind a wall stays visible, and large or close glows look dimmer than with Xenos. |

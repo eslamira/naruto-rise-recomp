@@ -9,13 +9,23 @@ bool ConfigManager::Load(const std::filesystem::path& toml_path, GameConfig& con
     return false;
   }
   try {
-    auto tbl = toml::parse_file(toml_path.string());
+    // Open the native filesystem path (UTF-16 on Windows), not an ANSI path
+    // passed to a parser expecting UTF-8. Otherwise accented install folders
+    // silently fall back to defaults and lose user settings on the next save.
+    std::ifstream input(toml_path, std::ios::binary);
+    if (!input) return false;
+    auto tbl = toml::parse(input);
     if (auto v = tbl["gpu_plugin"].value<std::string>()) config.gpu_plugin = *v;
     if (auto v = tbl["renderer"].value<std::string>()) config.renderer = *v == "xenos" ? "xenos" : "native";
+    // The launcher now selects the native graphics API directly. Migrate old
+    // Xenos selections while preserving the saved native backend.
+    if (kNativeRendererBuilt) config.renderer = "native";
     if (auto v = tbl["graphics_device"].value<std::string>()) config.graphics_device = *v;
+    if (auto v = tbl["native_backend"].value<std::string>()) config.native_backend = *v;
     if (auto v = tbl["d3d12_readback_resolve"].value<bool>()) config.d3d12_readback_resolve = *v;
     if (auto v = tbl["skip_intro_videos"].value<bool>()) config.skip_intro_videos = *v;
     if (auto v = tbl["user_language"].value<std::uint32_t>()) config.user_language = *v;
+    if (auto v = tbl["translation_mod"].value<std::string>()) config.translation_mod = *v;
     if (auto v = tbl["log_verbose"].value<bool>()) config.log_verbose = *v;
     if (auto v = tbl["log_level"].value<std::string>()) config.log_level = *v;
     if (auto v = tbl["protect_zero"].value<bool>()) config.protect_zero = *v;
@@ -69,7 +79,9 @@ bool ConfigManager::Save(const std::filesystem::path& toml_path, const GameConfi
   toml::table tbl;
   if (std::filesystem::exists(toml_path)) {
     try {
-      tbl = toml::parse_file(toml_path.string());
+      std::ifstream input(toml_path, std::ios::binary);
+      if (!input) return false;
+      tbl = toml::parse(input);
     } catch (...) {
       tbl = toml::table{};
     }
@@ -81,7 +93,8 @@ bool ConfigManager::Save(const std::filesystem::path& toml_path, const GameConfi
   // game: a configuration that still has it loses it on the first save.
   tbl.erase("unlock_fps");
   if (kNativeRendererBuilt) {
-    tbl.insert_or_assign("renderer", config.renderer);
+    tbl.insert_or_assign("renderer", "native");
+    tbl.insert_or_assign("native_backend", config.native_backend);
     tbl.insert_or_assign("msaa_samples", config.msaa_samples);
     tbl.insert_or_assign("transparency_antialiasing", config.transparency_antialiasing);
     tbl.insert_or_assign("frame_rate", config.frame_rate);
@@ -93,6 +106,7 @@ bool ConfigManager::Save(const std::filesystem::path& toml_path, const GameConfi
   tbl.insert_or_assign("d3d12_readback_resolve", config.d3d12_readback_resolve);
   tbl.insert_or_assign("skip_intro_videos", config.skip_intro_videos);
   tbl.insert_or_assign("user_language", config.user_language);
+  tbl.insert_or_assign("translation_mod", config.translation_mod);
   tbl.insert_or_assign("log_verbose", config.log_verbose);
   tbl.insert_or_assign("log_level", config.log_level);
   tbl.insert_or_assign("protect_zero", config.protect_zero);

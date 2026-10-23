@@ -135,11 +135,11 @@ inline constexpr const char* kFr[] = {
     "Espagnol",  // GameLanguageSpanish
     "Italien",  // GameLanguageItalian
     "Personnalisée (%u)",  // GameLanguageCustom
-    "Appliquée au prochain lancement. Les textes et voix disponibles dépendent des fichiers du jeu.",  // GameLanguageDescription
+    "Appliquée au prochain lancement. Les traductions installées dans mods apparaissent ici et remplacent les textes uniquement si elles sont sélectionnées. Les voix disponibles dépendent des fichiers du jeu.",  // GameLanguageDescription
     "Langue de l'interface du lanceur",  // LauncherLanguageTooltip
     "Xenos (GPU émulé)",  // RendererXenos
-    "Natif (Direct3D 12)",  // RendererNative
-    "Le moteur de rendu natif dessine le jeu directement avec Direct3D 12 et est utilisé par défaut : plus rapide et avec plus d'options. Xenos émule le GPU de la Xbox 360 et couvre tout le jeu ; choisissez-le si quelque chose ne s'affiche pas correctement avec le moteur de rendu natif.",  // RendererDescription
+    "Natif",  // RendererNative
+    "API graphique utilisée par le jeu : Direct3D 12 ou Vulkan. Appliquée au prochain lancement.",  // RendererDescription
     "Non disponible avec le moteur de rendu natif. Choisissez Xenos dans Moteur de rendu pour l'utiliser.",  // XenosOnlyReason
     "MSAA",  // MsaaLabel
     "4x (original)",  // MsaaOriginal
@@ -205,6 +205,52 @@ inline constexpr const char* kFr[] = {
     "Clic gauche",  // MouseLeftName
     "Clic droit",  // MouseRightName
     "Clic milieu",  // MouseMiddleName
+    "API graphique native",  // NativeBackendLabel
+    "Choisissez Direct3D 12 ou Vulkan. Redémarrage du jeu requis. Vulkan limite la file à une présentation.",  // NativeBackendDescription
+    "Vérifier les mises à jour",  // UpdatesCheck
+    "Recherche de mises à jour…",  // UpdatesChecking
+    "Votre version est à jour.",  // UpdatesCurrent
+    "Vérification impossible. Réessayez plus tard.",  // UpdatesFailed
+    "Impossible de comparer la version installée.",  // UpdatesUnknownVersion
+    "Nouvelle version disponible : %s",  // UpdatesAvailable
+    "Nouveautés",  // UpdatesNotes
+    "Télécharger",  // UpdatesDownload
+    "Installateur Windows",  // UpdatesInstaller
+    "ZIP portable",  // UpdatesPortable
+    "Plus tard",  // UpdatesLater
+    "Ignorer cette version",  // UpdatesIgnore
+    "Impossible d’ouvrir le navigateur. Réessayez.",  // UpdatesBrowserFailed
+    "Ouvre le téléchargement dans votre navigateur. Fermez le jeu et le lanceur avant d’appliquer la mise à jour.",  // UpdatesDownloadHint
+    "Patientez. Les vérifications sont limitées à une par minute.",  // UpdatesCheckCooldown
+    "Téléchargement manuel",  // UpdatesManualDownload
+    "Téléchargement de la mise à jour…",  // UpdatesDownloading
+    "Vérification du téléchargement…",  // UpdatesVerifying
+    "Annulation…",  // UpdatesCancelling
+    "Annuler",  // UpdatesCancel
+    "Téléchargement annulé.",  // UpdatesCancelled
+    "Téléchargement vérifié. Le lanceur se fermera et l’installateur mettra à jour ce dossier :",  // UpdatesReadyToInstall
+    "Installer et fermer le lanceur",  // UpdatesInstallClose
+    "Échec du téléchargement. Vérifiez la connexion et réessayez.",  // UpdatesDownloadFailed
+    "Le fichier a échoué à la vérification. Téléchargez-le à nouveau.",  // UpdatesIntegrityFailed
+    "Impossible de confirmer cette mise à jour. Réessayez ou ouvrez sa page depuis Nouveautés.",  // UpdatesMetadataFailed
+    "Impossible d’enregistrer le téléchargement. Vérifiez l’espace libre et les autorisations du dossier.",  // UpdatesStorageFailed
+    "Fermez le jeu et les autres lanceurs utilisant ce dossier, puis réessayez.",  // UpdatesCloseGame
+    "Impossible de lancer l’installateur. Réessayez ou ouvrez sa page depuis Nouveautés.",  // UpdatesInstallFailed
+    "Impossible d’enregistrer les paramètres. Corrigez les autorisations du fichier avant l’installation.",  // UpdatesSaveFailed
+    "L’enregistrement de l’installation a changé. Fermez puis rouvrez le lanceur et réessayez.",  // UpdatesNotInstalled
+    "Télécharger et installer",  // UpdatesDownloadInstall
+    "Lancer l’installateur",  // UpdatesLaunchInstaller
+    "L’installateur sera téléchargé et vérifié. Une seconde confirmation sera demandée avant de fermer le lanceur et d’ouvrir l’assistant pour mettre à jour le jeu.",  // UpdatesConfirmDownload
+    "L’installateur a été téléchargé et vérifié. Voulez-vous le lancer maintenant ? Vos paramètres seront enregistrés et le lanceur se fermera. L’assistant vous guidera pendant la mise à jour. Fermez le jeu avant de continuer.",  // UpdatesConfirmInstall
+    "Cette copie est portable. L’installateur l’enregistrera comme application Windows dans ce même dossier. Ce processus n’utilise pas le ZIP.",  // UpdatesPortableConversion
+    "Dossier d’installation",  // UpdatesDestination
+    "Continuer le téléchargement ?",  // UpdatesContinue
+    "Oui",  // UpdatesYes
+    "Non",  // UpdatesNo
+    "Téléchargement prêt. Cliquez sur Télécharger et installer pour lancer l’installateur.",  // UpdatesDownloadReady
+    "Aucun installateur Windows pour cette version. Consultez les nouveautés.",  // UpdatesNoInstaller
+    "Annuler le téléchargement",  // UpdatesCancelDownload
+    "Ce dossier ne contient pas le portage PC complet. Utilisez le lanceur dans le dossier contenant narutorise.exe et narutorise_launcher.exe.",  // UpdatesMissingPortFiles
 };
 
 }  // namespace localization_strings

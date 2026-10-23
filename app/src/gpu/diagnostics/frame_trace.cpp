@@ -62,13 +62,13 @@ uint64_t FrameTraceTarget() { FrameTraceInit(); return frame_trace.target.load()
 // Called at each Swap n with the own draws of the frame it closes.
 void FrameTraceNoteSwap(uint64_t n, uint64_t frame_draws) {
   FrameTraceInit();
-  if (frame_trace.key_mode) {  // F11 arms the next frame.
-    const bool down = (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
+  if (frame_trace.key_mode) {  // F10 arms the next frame.
+    const bool down = (GetAsyncKeyState(VK_F10) & 0x8000) != 0;
     if (down && !frame_trace.key_down && !frame_trace.target.load() && frame_trace.key_traces < kKeyTraces) {
       ++frame_trace.key_traces;
       frame_trace.target.store(n + 1);
       host::Record("native-d3d-frame-trace-armed", fmt::format(
-          "\"key\":\"F11\",\"trace\":{},\"swap\":{},\"frame_draws\":{},\"target_swap\":{}", frame_trace.key_traces, n,
+          "\"key\":\"F10\",\"trace\":{},\"swap\":{},\"frame_draws\":{},\"target_swap\":{}", frame_trace.key_traces, n,
           frame_draws, n + 1));
     }
     frame_trace.key_down = down;
@@ -80,7 +80,7 @@ void FrameTraceNoteSwap(uint64_t n, uint64_t frame_draws) {
         "\"scene_first_swap\":{},\"frame_draws\":{},\"target_swap\":{}", n, frame_draws, frame_trace.target.load()));
   }
 }
-// After a readback in the key mode, the trace is free for the next F11.
+// After a readback in the key mode, the trace is free for the next F10.
 void FrameTraceRearm() {
   if (!frame_trace.key_mode) return;
   frame_trace.dests.clear();
@@ -132,20 +132,22 @@ void FrameTraceReadback(uint32_t front, uint64_t n) {
                            evidence.empty() ? "null" : evidence);
   }
   // The sampled copies of the diagnosed draws, every level, as their rows:
-  // trace-<swap>-tex-<key>-l<level>-f<DXGI format>-<w>x<h>-r<row bytes>.bin.
+  // trace-<swap>-tex-<key>-l<level>-f<format>-<w>x<h>-r<row bytes>.bin (the
+  // number of the TextureFormat, contracts.h: the DXGI one).
   std::string sampled;
   for (const auto& [key, levels] : frame_trace.sampled) {
     for (uint32_t level = 0; level < levels; ++level) {
       std::vector<uint8_t> rows;
-      uint32_t format = 0, width = 0, height = 0, row_bytes = 0;
+      TextureFormat format = TextureFormat::kUnknown;
+      uint32_t width = 0, height = 0, row_bytes = 0;
       std::string evidence;
       auto* dispatcher = host::ActiveDispatcher();
       const bool read = dispatcher && dispatcher->Run([&](Engine& engine, std::string& out) {
         return engine.ReadSampled(key, level, rows, format, width, height, row_bytes, out); }, evidence);
       std::string file;
       if (const char* dir = std::getenv("REX_NATIVE_FRAME_DIR"); read && dir && *dir) {
-        file = fmt::format("{}/trace-{:04}-tex-{}-l{}-f{}-{}x{}-r{}.bin", dir, n, key, level, format, width, height,
-                           row_bytes);
+        file = fmt::format("{}/trace-{:04}-tex-{}-l{}-f{}-{}x{}-r{}.bin", dir, n, key, level, uint32_t(format), width,
+                           height, row_bytes);
         std::FILE* out = std::fopen(file.c_str(), "wb");
         if (!out || std::fwrite(rows.data(), 1, rows.size(), out) != rows.size()) file = "write-failed";
         if (out) std::fclose(out);

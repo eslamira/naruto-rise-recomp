@@ -19,6 +19,15 @@ if (-not $Version) {
 }
 if ($Version -notmatch '^\d+\.\d+\.\d+([-+][A-Za-z0-9.-]+)?$') { throw 'Invalid release version.' }
 
+# Only curated packages from source belong in a release, never local build mods.
+$BundledModFiles = @('mods\pt-br\mod.toml', 'mods\pt-br\texts.json')
+foreach ($name in $BundledModFiles) {
+    $path = Join-Path $RootDir $name
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) {
+        throw "Missing or empty bundled translation file: $path"
+    }
+}
+
 # Check tools before writing or replacing any release artifact.
 if (-not $NoSetup) {
     if (-not $IsccPath) {
@@ -124,6 +133,8 @@ foreach ($name in $peFiles) {
 $ReleaseParts = @{
     FidelityFX = $binaries -contains $FidelityFxDll
     NativeRenderer = $cache -match '(?m)^NARUTORISE_NATIVE_RENDERER_BOOTSTRAP:BOOL=(ON|TRUE|YES|1)\s*$'
+    NativeVulkan = ($cache -match '(?m)^NARUTORISE_NATIVE_RENDERER_BOOTSTRAP:BOOL=(ON|TRUE|YES|1)\s*$') -and
+                   ($cache -match '(?m)^NARUTORISE_NATIVE_VULKAN:BOOL=(ON|TRUE|YES|1)\s*$')
 }
 $Licenses = @((Import-PowerShellDataFile (Join-Path $PSScriptRoot 'third-party-licenses.psd1')).Components |
     Where-Object { -not $_.Condition -or $ReleaseParts[$_.Condition] })
@@ -158,6 +169,11 @@ foreach ($dir in @('assets', 'shader_cache', 'game', 'licenses')) {
 }
 try {
     foreach ($name in $binaries) { Copy-Item -LiteralPath (Join-Path $AppBuildDir $name) -Destination $Portable }
+    foreach ($name in $BundledModFiles) {
+        $destination = Join-Path $Portable $name
+        New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $RootDir $name) -Destination $destination
+    }
     Set-Content (Join-Path $Portable 'narutorise.version') -Encoding ASCII -Value $Version
     foreach ($asset in @('cover.jpg', 'narutorise.ico')) {
         Copy-Item -LiteralPath (Join-Path $RootDir "launcher\assets\$asset") -Destination (Join-Path $Portable 'assets')
@@ -210,12 +226,21 @@ Choose your original Xbox 360 ISO, or skip it to use already extracted files.
 ISO extraction is available only in Setup; run Setup again to import later.
 The setup preserves game and narutorise.toml on reinstall/uninstall.
 
+UPDATES:
+The launcher checks GitHub Releases and notifies you when a newer version exists.
+Choose Download and install, then confirm the download. After verification,
+a second confirmation opens Setup in the correct folder and closes the launcher.
+Close the game and any other launcher using that folder before installing.
+For portable copies, the first confirmation explains conversion to a registered
+Windows installation. ZIP downloads remain on the release page and require manual extraction.
+
 MANUAL UPDATE:
 Run the new NarutoRiseInstaller.exe and choose Update an existing installation.
 Select the folder containing narutorise.exe and narutorise_launcher.exe.
 Close the game and launcher first. No ISO import or uninstall is needed.
 Game files, configuration, saves and DLCs are preserved. Portable installations
 can also be updated this way; Setup registers them as installed applications.
+The bundled mods\pt-br translation is installed or updated too; other mods are preserved.
 
 PORTABLE PACKAGE:
 Extract this folder to a writable location and run narutorise_launcher.exe.
@@ -226,6 +251,11 @@ Optional: run install.ps1 to create shortcuts.
 SETTINGS:
 Interface languages: English, Brazilian Portuguese, French, German, Spanish,
 Italian, and Russian. Game languages: English, French, German, Spanish, Italian.
+Brazilian Portuguese text is included in mods\pt-br. Select this package
+under Settings > Game > Game language to activate it. Installing or updating
+does not change the selected language. To customize the bundled translation,
+copy it to a different mod folder, since updates replace mods\pt-br\mod.toml
+and mods\pt-br\texts.json.
 Resolution scale, fullscreen, VSync,
 FXAA anti-aliasing, AMD FidelityFX CAS/FSR post-processing, anisotropic
 filtering, aspect ratios 16:9 / 21:9 / 32:9, and FPS overlay (F1).
@@ -279,5 +309,13 @@ Game files are not included. License and third-party notices: licenses\README.tx
     if (Test-Path $Backup) { Write-Host "Previous artifacts preserved in $Backup" }
 } finally {
     # Stage is a unique directory created by this invocation, never an existing release.
-    Remove-Item -LiteralPath $Stage -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path -LiteralPath $Stage) {
+        $resolvedStage = (Resolve-Path -LiteralPath $Stage).Path
+        $resolvedOutput = (Resolve-Path -LiteralPath $OutputRootDir).Path
+        if ((Split-Path $resolvedStage -Parent) -ne $resolvedOutput -or
+            (Split-Path $resolvedStage -Leaf) -notlike '.packaging-*') {
+            throw "Refusing to remove a staging directory outside the release output: $resolvedStage"
+        }
+        Remove-Item -LiteralPath $resolvedStage -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }

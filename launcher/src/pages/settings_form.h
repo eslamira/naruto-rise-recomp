@@ -25,8 +25,8 @@ struct Option {
 
 // Draws the rows of one group, one under the other: the label on the left and
 // the control on the right (a checkbox carries its own label). The options of
-// the renderer that is not chosen are greyed out and tagged, and the native
-// renderer's options are left out of builds without it.
+// unavailable renderer are omitted. Native-capable builds select D3D12 or
+// Vulkan directly; builds without the native renderer keep the legacy options.
 //
 // The row under the mouse (or, while the keyboard navigates, the focused row)
 // is highlighted and remembered across frames; Described() is the option for

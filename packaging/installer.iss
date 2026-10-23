@@ -98,6 +98,10 @@ Source: "..\launcher\assets\cover.jpg"; DestDir: "{app}\assets"; Flags: ignoreve
 Source: "..\launcher\assets\narutorise.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 Source: "..\launcher\assets\fonts\*"; DestDir: "{app}\assets\fonts"; Flags: ignoreversion
 Source: "{#PackageDir}\licenses\*"; DestDir: "{app}\licenses"; Flags: ignoreversion
+; Bundled translation: install on new copies and refresh on updates.
+; Only these owned files are replaced; community packages are left untouched.
+Source: "{#PackageDir}\mods\pt-br\mod.toml"; DestDir: "{app}\mods\pt-br"; Flags: ignoreversion
+Source: "{#PackageDir}\mods\pt-br\texts.json"; DestDir: "{app}\mods\pt-br"; Flags: ignoreversion
 Source: "{#PackageDir}\narutorise.toml"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "..\tools\extract-xiso\extract-xiso.exe"; Flags: dontcopy
 Source: "{#HelperPath}"; Flags: dontcopy
@@ -326,7 +330,8 @@ end;
 function IsRenumberedBetaVersion(const Version: String): Boolean;
 begin
   Result := (Version = '0.1.0-beta.2') or (Version = '0.1.0-beta.3') or
-    (Version = '0.2.0-beta.1') or (Version = '0.2.0-beta.2');
+    (Version = '0.2.0-beta.1') or (Version = '0.2.0-beta.2') or
+    (Version = '0.3.0-beta');
 end;
 
 function DestinationError: String;
@@ -348,9 +353,9 @@ begin
   end;
   if not IsExistingInstallation(WizardDirValue) then Exit;
   PreviousVersion := InstalledVersion(WizardDirValue);
-  { Betas 2 and 3 of 0.1.0 and betas 1 and 2 of 0.2.0 replace beta 1's shipped
-    1.0.0-beta.1 label, the old 1.0.0 label and local 1.0.1/1.0.2 builds.
-    Scope the numbering reset to these releases; other versions still use the
+  { Betas 2 and 3 of 0.1.0, betas 1 and 2 of 0.2.0 and 0.3.0-beta replace
+    beta 1's shipped 1.0.0-beta.1 label, the old 1.0.0 label and local
+    1.0.1/1.0.2 builds. Scope the numbering reset to these releases; other versions still use the
     normal downgrade check. Reject the reverse transition as well. }
   if IsRenumberedBetaVersion('{#MyAppVersion}') and
     IsSupersededVersion(PreviousVersion) then

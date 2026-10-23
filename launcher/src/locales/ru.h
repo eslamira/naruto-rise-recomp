@@ -135,11 +135,11 @@ inline constexpr const char* kRu[] = {
     "Испанский",  // GameLanguageSpanish
     "Итальянский",  // GameLanguageItalian
     "Другой (%u)",  // GameLanguageCustom
-    "Применяется при запуске игры. Доступные тексты и озвучка зависят от файлов игры.",  // GameLanguageDescription
+    "Применяется при запуске игры. Переводы из папки mods появляются здесь и заменяют текст только после выбора. Доступная озвучка зависит от файлов игры.",  // GameLanguageDescription
     "Язык интерфейса лаунчера",  // LauncherLanguageTooltip
     "Xenos (эмуляция GPU)",  // RendererXenos
-    "Нативный (Direct3D 12)",  // RendererNative
-    "Нативный рендерер рисует игру напрямую через Direct3D 12 и используется по умолчанию: быстрее и с дополнительными настройками. Xenos эмулирует GPU Xbox 360 и поддерживает всю игру; выберите его, если с нативным рендерером что-то отображается неправильно.",  // RendererDescription
+    "Нативный",  // RendererNative
+    "Графический API игры: Direct3D 12 или Vulkan. Выбор применяется при следующем запуске.",  // RendererDescription
     "Недоступно с нативным рендерером. Чтобы включить, выберите Xenos в пункте «Рендерер».",  // XenosOnlyReason
     "MSAA",  // MsaaLabel
     "4x (оригинал)",  // MsaaOriginal
@@ -205,6 +205,52 @@ inline constexpr const char* kRu[] = {
     "ЛКМ",  // MouseLeftName
     "ПКМ",  // MouseRightName
     "СКМ",  // MouseMiddleName
+    "Графический API",  // NativeBackendLabel
+    "Выберите Direct3D 12 или Vulkan. Требуется перезапуск игры. Vulkan ставит в очередь один кадр.",  // NativeBackendDescription
+    "Проверить обновления",  // UpdatesCheck
+    "Проверка обновлений…",  // UpdatesChecking
+    "У вас актуальная версия.",  // UpdatesCurrent
+    "Не удалось проверить. Повторите позже.",  // UpdatesFailed
+    "Не удалось сравнить установленную версию.",  // UpdatesUnknownVersion
+    "Доступна новая версия: %s",  // UpdatesAvailable
+    "Что нового",  // UpdatesNotes
+    "Скачать обновление",  // UpdatesDownload
+    "Установщик для Windows",  // UpdatesInstaller
+    "Портативный ZIP",  // UpdatesPortable
+    "Позже",  // UpdatesLater
+    "Пропустить эту версию",  // UpdatesIgnore
+    "Не удалось открыть браузер. Попробуйте снова.",  // UpdatesBrowserFailed
+    "Открывает загрузку в браузере. Закройте игру и лаунчер перед обновлением.",  // UpdatesDownloadHint
+    "Подождите. Проверка доступна раз в минуту.",  // UpdatesCheckCooldown
+    "Скачать вручную",  // UpdatesManualDownload
+    "Загрузка обновления…",  // UpdatesDownloading
+    "Проверка загрузки…",  // UpdatesVerifying
+    "Отмена…",  // UpdatesCancelling
+    "Отменить",  // UpdatesCancel
+    "Загрузка отменена.",  // UpdatesCancelled
+    "Загрузка проверена. Лаунчер закроется, и установщик обновит эту папку:",  // UpdatesReadyToInstall
+    "Установить и закрыть лаунчер",  // UpdatesInstallClose
+    "Ошибка загрузки. Проверьте подключение и повторите попытку.",  // UpdatesDownloadFailed
+    "Файл не прошёл проверку. Загрузите его снова.",  // UpdatesIntegrityFailed
+    "Не удалось подтвердить обновление. Проверьте снова или откройте страницу выпуска через «Что нового».",  // UpdatesMetadataFailed
+    "Не удалось сохранить файл. Проверьте свободное место и права доступа к папке.",  // UpdatesStorageFailed
+    "Закройте игру и другие лаунчеры из этой папки, затем повторите установку.",  // UpdatesCloseGame
+    "Не удалось запустить установщик. Повторите попытку или откройте страницу выпуска через «Что нового».",  // UpdatesInstallFailed
+    "Не удалось сохранить настройки. Исправьте права доступа к файлу перед установкой.",  // UpdatesSaveFailed
+    "Регистрация установки изменилась. Закройте и снова откройте лаунчер, затем повторите попытку.",  // UpdatesNotInstalled
+    "Скачать и установить",  // UpdatesDownloadInstall
+    "Запустить установщик",  // UpdatesLaunchInstaller
+    "Установщик будет скачан и проверен. Затем мы снова запросим подтверждение, прежде чем закрыть лаунчер и открыть мастер установки для обновления игры.",  // UpdatesConfirmDownload
+    "Установщик скачан и проверен. Запустить его сейчас? Настройки будут сохранены, а лаунчер закроется. Мастер установки проведёт вас через обновление. Закройте игру перед продолжением.",  // UpdatesConfirmInstall
+    "Это портативная копия. Установщик зарегистрирует её как приложение Windows в той же папке. Этот процесс не использует ZIP.",  // UpdatesPortableConversion
+    "Папка установки",  // UpdatesDestination
+    "Продолжить загрузку?",  // UpdatesContinue
+    "Да",  // UpdatesYes
+    "Нет",  // UpdatesNo
+    "Загрузка готова. Нажмите «Скачать и установить», чтобы открыть установщик.",  // UpdatesDownloadReady
+    "Для этой версии нет установщика Windows. См. «Что нового».",  // UpdatesNoInstaller
+    "Отменить загрузку",  // UpdatesCancelDownload
+    "В этой папке нет полного порта игры. Используйте лаунчер в папке с narutorise.exe и narutorise_launcher.exe.",  // UpdatesMissingPortFiles
 };
 
 }  // namespace localization_strings

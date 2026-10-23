@@ -20,6 +20,7 @@
 #include "gpu/d3d/frame.h"
 #include "gpu/d3d/d3d.h"
 #include "gpu/backend/dispatcher.h"
+#include "gpu/backend/pipeline_keys.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -125,15 +126,17 @@ bool DescribeEntry(size_t i, PipelineDesc& desc, uint32_t& linked, bool& variant
   };
   auto vs = shader_cache.by_name.find(entry.vs);
   if (vs == shader_cache.by_name.end()) return unresolved("vs-not-in-cache");
-  desc.vs_key = entry.vs;
-  desc.ps_key = entry.ps;
-  desc.vs_dxil = LoadDxil(*vs->second);
-  if (!desc.vs_dxil) return unresolved("vs-dxil-unreadable");
+  desc.vs.key = entry.vs;
+  desc.vs.format = desc.ps.format = shader_cache.format;
+  desc.vs.spec_mask = vs->second->spec_mask;
+  desc.ps.key = entry.ps;
+  desc.vs.bytes = LoadModule(*vs->second);
+  if (!desc.vs.bytes) return unresolved("vs-module-unreadable");
   std::string variant_key;  // The pixel shader key the draw asks for now, when the list holds the other.
   linked = 0;
   variant = false;
-  if (desc.ps_key != "depth-only") {
-    std::string name = desc.ps_key;
+  if (desc.ps.key != "depth-only") {
+    std::string name = desc.ps.key;
     uint32_t spec = 0;
     if (const size_t plus = name.find("+spec"); plus != std::string::npos) {
       spec = uint32_t(std::stoul(name.substr(plus + 5)));
@@ -151,13 +154,15 @@ bool DescribeEntry(size_t i, PipelineDesc& desc, uint32_t& linked, bool& variant
     linked = TransparencySpec(requested, ps->second->spec_mask, entry.state[8], entry.state[0]);
     if (linked != spec) variant_key = fmt::format("{}+spec{}", name, linked);
     std::string error;
-    desc.ps_dxil = LoadShader(*ps->second, linked, error);
-    if (!desc.ps_dxil) return unresolved("ps-dxil-unavailable");
+    desc.ps.bytes = LoadShader(*ps->second, linked, error);
+    if (!desc.ps.bytes) return unresolved("ps-module-unavailable");
+    desc.ps.spec_mask = ps->second->spec_mask;
+    desc.ps.spec_value = linked;
   }
   desc.elements = pipeline_precompile.layouts[i];
   desc.layout_id = entry.layout;
   desc.state = entry.state;
-  if (Engine::PipelineKey(desc.vs_key, desc.ps_key, desc.layout_id, desc.state) != entry.key) {
+  if (PipelineKey(desc.vs.key, desc.ps.key, desc.layout_id, desc.state) != entry.key) {
     if (note)
       PrecompileNote(pipeline_precompile.mismatched, fmt::format("{{\"reason\":\"key\",\"key\":\"{:016x}\"}}",
                                                                  entry.key));
@@ -167,7 +172,7 @@ bool DescribeEntry(size_t i, PipelineDesc& desc, uint32_t& linked, bool& variant
   // and the alpha test keeps the word of the entry (the title's alpha to mask).
   if (!variant_key.empty()) {
     variant = true;
-    desc.ps_key = variant_key;
+    desc.ps.key = variant_key;
     if (linked == kSpecAlphaToCoverage) desc.state[11] = 1;
   }
   return true;
@@ -221,7 +226,8 @@ void StartPipelinePrecompile() {
       std::vector<VertexElement> elements;
       for (uint32_t e = entry.first_element; e < entry.first_element + entry.element_count; ++e) {
         const auto& c = kPipelineElements[e];
-        elements.push_back({c.semantic, c.semantic_index, c.format, c.slot, c.offset});
+        // The list's formats are the numbers of VertexFormat (schema 1, contracts.h).
+        elements.push_back({c.semantic, c.semantic_index, VertexFormat(c.format), c.slot, c.offset});
       }
       layout = std::make_shared<const std::vector<VertexElement>>(std::move(elements));
     }
@@ -238,7 +244,7 @@ void StartPipelinePrecompile() {
       std::lock_guard lock(p.mutex);
       failure = p.first_failure.empty() ? "null" : p.first_failure;
     }
-    host::Record("native-d3d-pipeline-precompile", fmt::format(
+    const std::string summary = fmt::format(
         "\"list\":{},\"threads\":{},\"created\":{},\"present\":{},\"failed\":{},\"unresolved\":{},\"mismatched\":{},"
         "\"alpha_to_coverage\":{},\"alpha_test\":{},\"world_posted\":{},\"world_present\":{},\"stopped\":{},\"ms\":{},"
         "\"swap\":{},\"first_failure\":{}",
@@ -246,7 +252,10 @@ void StartPipelinePrecompile() {
         p.threads, p.created.load(), p.present.load(), p.failed.load(), p.unresolved.load(), p.mismatched.load(),
         p.alpha_to_coverage.load(), p.alpha_test.load(), p.world_posted.load(), p.world_present.load(), stopped,
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - p.started).count(),
-        swaps.load(), failure));
+        swaps.load(), failure);
+    host::Record("native-d3d-pipeline-precompile", summary);
+    // The product has no journal: how long the list took goes to the SDK log.
+    if (!host::Journaled()) REXLOG_INFO("[narutorise] Pipeline precompile: {{{}}}", summary);
   });
   host::Record("native-d3d-pipeline-precompile-start", fmt::format(
       "\"started\":{},\"list\":{},\"layouts\":{},\"worlds\":{},\"threads\":{},\"identity\":\"{}\",\"swap\":{}",

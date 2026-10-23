@@ -6,6 +6,9 @@
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
+#if defined(_WIN32)
+#define STBI_WINDOWS_UTF8
+#endif
 #include <stb_image.h>
 
 #if defined(__clang__)
@@ -19,7 +22,8 @@ LoadedTexture LoadTextureFromFile(ID3D11Device* device, const std::filesystem::p
   }
 
   int channels = 0;
-  unsigned char* data = stbi_load(path.string().c_str(), &tex.width, &tex.height, &channels, 4);
+  const auto utf8 = path.u8string();
+  unsigned char* data = stbi_load(reinterpret_cast<const char*>(utf8.c_str()), &tex.width, &tex.height, &channels, 4);
   if (!data) {
     return tex;
   }

@@ -9,6 +9,7 @@
 #include "gpu/settings.h"
 #include "gpu/diagnostics/crash_dump.h"
 #include "gpu/diagnostics/heap_watch.h"
+#include "wine.h"
 #include <cstdlib>
 #include <rex/logging.h>
 #include <rex/system/interfaces/graphics.h>
@@ -18,7 +19,7 @@
 // (gpu_plugin). The native renderer runs here without the journal unless a
 // path is given.
 REXCVAR_DEFINE_STRING(renderer, "native", "narutorise/Graphics",
-                      "Renderer: native (Direct3D 12, the default) or xenos (the emulated GPU)")
+                      "Renderer: native (the default) or xenos (the emulated GPU)")
     .allowed({"xenos", "native"})
     .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
 // The diagnostic cases: the native mode with the journal and both options below.
@@ -59,10 +60,26 @@ void Configure(rex::RuntimeConfig& config) {
   if (config.graphics) std::_Exit(88);
   if (!path.empty() && !OpenJournal(path)) std::_Exit(88);
   enabled = true;
-  REXLOG_INFO("[narutorise] Renderer: native (Direct3D 12){}", path.empty() ? "" : ", with the journal");
   // The graphics options, read once before the graphics system exists.
   gpu::RegisterPluginOptions();
   gpu::LoadSettings();
+  const auto& backend = gpu::CurrentSettings().native_backend;
+  bool available = false;
+#if !defined(NARUTORISE_NATIVE_D3D12_DISABLED)
+  available |= backend == "d3d12";
+#endif
+#if defined(NARUTORISE_NATIVE_VULKAN)
+  available |= backend == "vulkan";
+#endif
+  if (!available) {
+    REXLOG_ERROR("[narutorise] Requested native_backend '{}' is unavailable in this build. No backend fallback.", backend);
+    std::_Exit(88);
+  }
+#if defined(NARUTORISE_NATIVE_VULKAN)
+  if (const char* wine = narutorise::WineVersion())
+    REXLOG_INFO("[narutorise] Wine {} detected: the native renderer runs on Vulkan", wine);
+#endif
+  REXLOG_INFO("[narutorise] Renderer: native; backend: {}{}", backend, path.empty() ? "" : ", with the journal");
   gpu::crash_dump::Install();  // REX_NATIVE_CRASH_DUMP=1 (crash_dump.h).
   gpu::heap_watch::Install();  // REX_NATIVE_HEAP_WATCH=1 (heap_watch.h).
   config.gpu_plugin.clear();

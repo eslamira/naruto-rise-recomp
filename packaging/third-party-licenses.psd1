@@ -7,6 +7,9 @@
 #   NativeRenderer - NARUTORISE_NATIVE_RENDERER_BOOTSTRAP is ON
 @{
     Components = @(
+        @{ Name = 'nlohmann/json 3.11.3'; License = 'MIT'
+           Url = 'https://github.com/nlohmann/json'; File = 'third_party/nlohmann_json/LICENSE.MIT'; Target = 'nlohmann-json.txt'
+           Usage = 'narutorise.exe, narutorise_launcher.exe' }
         @{ Name = 'ReXGlue SDK (includes code derived from Xenia)'; License = 'BSD-3-Clause'
            Url = 'https://github.com/rexglue/rexglue-sdk'; File = 'sdk/LICENSE'; Target = 'rexglue-sdk.txt'
            Usage = 'narutorise.exe, rexruntime.dll, rexgpu-xenos.dll' }
@@ -97,5 +100,20 @@
         @{ Name = 'XenosRecomp (shader translation, shader_common.h in the embedded shaders)'; License = 'MIT'; Condition = 'NativeRenderer'
            Url = 'https://github.com/hedge-dev/XenosRecomp'; File = 'tools/xenosrecomp/LICENSE.md'; Target = 'xenosrecomp.txt'
            Usage = 'narutorise.exe' }
+        @{ Name = 'Zstandard'; License = 'BSD-3-Clause'; Condition = 'NativeRenderer'
+           Url = 'https://github.com/facebook/zstd'; File = 'tools/xenosrecomp/thirdparty/zstd/LICENSE'; Target = 'zstd.txt'
+           Usage = 'narutorise.exe (embedded shader package decoder)' }
+        @{ Name = 'volk'; License = 'MIT'; Condition = 'NativeVulkan'
+           Url = 'https://github.com/zeux/volk'; File = 'packaging/licenses/volk.txt'; Target = 'volk.txt'
+           Usage = 'narutorise.exe (Vulkan loader)' }
+        @{ Name = 'Vulkan Memory Allocator'; License = 'MIT'; Condition = 'NativeVulkan'
+           Url = 'https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator'; File = 'packaging/licenses/vulkan-memory-allocator.txt'; Target = 'vulkan-memory-allocator.txt'
+           Usage = 'narutorise.exe' }
+        @{ Name = 'Vulkan Headers'; License = 'Apache-2.0'; Condition = 'NativeVulkan'
+           Url = 'https://github.com/KhronosGroup/Vulkan-Headers'; File = 'packaging/licenses/vulkan-headers-apache.txt'; Target = 'vulkan-headers.txt'
+           Usage = 'narutorise.exe and narutorise_launcher.exe' }
+        @{ Name = 'SMOL-V'; License = 'MIT and Apache-2.0'; Condition = 'NativeVulkan'
+           Url = 'https://github.com/aras-p/smol-v'; File = 'tools/xenosrecomp/thirdparty/smol-v/license.txt'; Target = 'smol-v.txt'
+           Usage = 'narutorise.exe (embedded SPIR-V decoder)' }
     )
 }

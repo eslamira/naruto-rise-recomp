@@ -18,6 +18,7 @@
 #include "texture_loader.h"
 #include "ui.h"
 #include "theme.h"
+#include "wine.h"
 
 #include <filesystem>
 #include <iostream>
@@ -116,6 +117,12 @@ int main(int argc, char* argv[]) {
 
   GameConfig config;
   ConfigManager::Load(toml_path, config);
+  // Under Wine (Proton) the game runs the native renderer on Vulkan only
+  // (app/src/gpu/settings.cpp): the option shows and saves Vulkan there.
+  if (kNativeVulkanBuilt && narutorise::WineVersion() && config.native_backend != "vulkan") {
+    config.native_backend = "vulkan";
+    config.graphics_device.clear();  // Device names are enumerated separately by each API.
+  }
 
   // Initialize localization (English by default, or loaded from config)
   Localization::SetLanguageCode(config.launcher_language);
@@ -188,6 +195,7 @@ int main(int argc, char* argv[]) {
 
   bool running = true;
   bool request_launch = false;
+  bool update_started = false;
   std::string status_msg = "";
 
   while (running) {
@@ -196,6 +204,10 @@ int main(int argc, char* argv[]) {
       // A key being mapped is the launcher's, not ImGui's.
       if (launcher_ui::CaptureKeyEvent(event)) continue;
       ImGui_ImplSDL3_ProcessEvent(&event);
+      if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED &&
+          event.window.windowID == SDL_GetWindowID(window)) {
+        ui.RefreshTranslationMods();
+      }
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
       }
@@ -230,7 +242,12 @@ int main(int argc, char* argv[]) {
     g_pSwapChain->Present(1, 0); // VSync enabled
 #endif
 
-    if (request_launch) {
+    if (running && ui.ApplyRequestedUpdate(config)) {
+      update_started = true;
+      running = false;
+      request_launch = false;
+    }
+    if (running && request_launch) {
       ConfigManager::Save(toml_path, config);
       const std::filesystem::path game_data = game_paths::Find(base_dir, config.custom_game_root);
       if (game_data.empty()) {
@@ -316,7 +333,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Save settings before closing
-  ConfigManager::Save(toml_path, config);
+  if (!update_started) ConfigManager::Save(toml_path, config);
 
 #if defined(_WIN32)
   ImGui_ImplDX11_Shutdown();

@@ -12,6 +12,8 @@ See also: [Build and run](../docs/build-and-run.md), [DLCs](../docs/dlc.md), and
 - **`version.iss`**: Default release version; override using `-Version` without modifying source.
 - **`third-party-licenses.psd1`**: Third-party components the release ships, with their licenses. `package-release.ps1` copies each license text and the project `LICENSE` into the package's `licenses/` folder and writes its `README.txt` index, including the source revisions of the LGPL libraries in `rexruntime.dll`. Update it when a shipped dependency changes.
 - **`licenses/`**: Verbatim copies of license texts that exist only inside a source header or the upstream repository.
+
+Native Vulkan builds include the Volk, Vulkan Memory Allocator, Vulkan Headers and SMOL-V notices. Their SPIR-V is embedded in the executable. Do not package DXC, validation layers or Vulkan SDK tools; Vulkan loads the system driver through `vulkan-1.dll`. The launcher's API list comes from the same CMake backend options as the game.
 - **`private/`**: Local files derived from the game that packaging needs but Git ignores. `private/shader_cache/` holds the Xenos shader storage (`555307E5.xsh`, `555307E5.rtv.d3d12.xpso`), copied from `Documents/narutorise/cache/shaders/shareable/` after playing with the Xenos renderer. The native renderer's shader cache needs no file here: the build embeds it in `narutorise.exe`.
 - **`tests/`**: Synthetic ISO helper tests and isolated Inno install/uninstall tests.
 
@@ -116,10 +118,47 @@ Use `-IsccPath 'C:\path\ISCC.exe'` for a custom compiler location or `-NoSetup`
 to generate only the portable package. The old ImGui installer is not shipped;
 its source remains available behind `NARUTORISE_BUILD_LEGACY_INSTALLER=ON`.
 
-### Manual updates
+### Updates
 
-Distribute the new `NarutoRiseInstaller.exe` to existing users. They do not need
-an updater in the launcher or the original ISO to update the PC port:
+Publish `NarutoRiseInstaller.exe` and `naruto-rise-recomp-win-amd64.zip` as assets
+of the latest public GitHub release. The launcher checks `/releases/latest` and
+offers the installer when the release is newer; ZIP downloads remain on the release page. Keep the tag,
+`-Version`, and packaged `narutorise.version` consistent; tags may start with `v`.
+GitHub's `prerelease` flag controls eligibility, not the presence of `beta` in a
+tag. Keep new releases in draft until their assets are uploaded, then publish
+and designate the intended release as latest.
+
+After the first Yes/No confirmation, the launcher downloads the installer
+with progress/cancel, fetches fresh GitHub metadata, and requires a valid SHA-256
+`digest` and positive `size` (at most 1 GiB) from the installer asset. These fields
+are provided by GitHub for the current release; verify them after uploading a new
+asset. A missing digest prevents integrated installation; the release page remains
+accessible through **What's new**. This is an integrity check against GitHub metadata, not an
+independent publisher signature.
+
+The download accepts HTTPS only, with bounded redirects restricted to GitHub and
+its release asset hosts, finite network timeouts, and a one-hour transfer limit.
+It checks the exact byte count and hashes the file on disk, then keeps it open
+read-only without write/delete sharing until process creation. The cache of
+release notices is never used as the authority for executing an update.
+
+A second Yes/No confirmation appears after verification. **Yes** saves settings and starts the verified installer
+with `/MODE=update`, `/DIR` for the current folder, `/LANG` for the launcher
+language, `/NORESTART`, and `/NOFORCECLOSEAPPLICATIONS`. The launcher exits only
+after process creation succeeds. It checks the registration and installed version
+again before handoff, and refuses to start Setup while the game or another
+launcher uses that installation. Setup's existing CloseApplications handling
+also checks for files in use before replacing them. No silent install or forced
+game termination is used. The normal completion page offers to reopen the launcher.
+
+Unregistered portable copies require explicit consent to conversion in the first
+dialog; the installer service rejects them without this consent. Both PC port
+executables must be present before handoff, even for registered copies. A standalone
+launcher fixture can test the dialogs and download, but cannot apply an update.
+The notice has only **Download and install** and **What's new**; during transfer
+the first action becomes **Cancel download**. There is no ZIP menu or implicit ZIP
+extraction. Declining the second dialog leaves the download ready for another
+attempt in the same session. All users can still update manually, without the original ISO:
 
 1. Close the game and launcher, then run the new installer.
 2. Choose **Update an existing installation** (preselected when the initial
@@ -134,7 +173,16 @@ Inno Setup and creates an uninstaller. The folder picker uses the selected folde
 directly, without appending a new application subfolder.
 
 Updates replace only the packaged port binaries, DLLs, assets, bundled shader
-cache and README. Existing `narutorise.toml`, `game/`, legacy `game_root/`, pending
+cache, README and the bundled `mods/pt-br/mod.toml` and `mods/pt-br/texts.json`.
+The complete Portuguese translation is sourced from [`mods/pt-br`](../mods/pt-br),
+not from ignored build output, and is included in both the portable ZIP and Setup.
+New installations and updates receive it without changing the selected game
+language. Select **Português (Brasil)** in the launcher's game language list to
+activate it. Other mod folders and extra files are preserved; copy the bundled
+package to a different folder before customizing it, since updates replace those
+two bundled files.
+
+Existing `narutorise.toml`, `game/`, legacy `game_root/`, pending
 `dlc/` packages, personal files, and saves/installed DLCs in the configured user
 data directory are preserved. No configuration defaults are forcibly migrated.
 The previous native uninstaller is never executed. Its obsolete registration is
@@ -148,8 +196,8 @@ replacement by an older installer; reinstalling the same version is allowed.
 The version marker is also included in portable packages and is removed by the
 Inno uninstaller. Keep the same production AppId for every release.
 
-The `0.1.0-beta.2`, `0.1.0-beta.3`, `0.2.0-beta.1` and `0.2.0-beta.2` installers
-accept migration from beta 1's shipped `1.0.0-beta.1` identifier, the old `1.0.0`
+The `0.1.0-beta.2`, `0.1.0-beta.3`, `0.2.0-beta.1`, `0.2.0-beta.2` and `0.3.0-beta`
+installers accept migration from beta 1's shipped `1.0.0-beta.1` identifier, the old `1.0.0`
 label and the local `1.0.1`/`1.0.2` builds, preserving user data. The public
 `v0.1.0-beta.1` release tag did not match its installer's internal version. This
 numbering reset is limited to these releases; unrelated newer versions remain
@@ -160,7 +208,7 @@ old labels. Updates between the listed releases follow the normal numeric check
 Build this beta update with:
 
 ```powershell
-pwsh -File packaging/package-release.ps1 -Version 0.2.0-beta.2
+pwsh -File packaging/package-release.ps1 -Version 0.3.0-beta
 ```
 
 For automation, the installer accepts `/MODE=update` or `/MODE=install`; when
@@ -174,6 +222,62 @@ To import an ISO into an existing empty `game/` folder, select **Install a new c
 or import an ISO**, or pass `/MODE=install /GAMEISO="D:\Original.iso"`.
 
 ### Tests
+
+Launcher update checks and all seven interface languages can be verified without
+game data (with the application build configured and the VS x64 environment loaded):
+
+```powershell
+cmake --build app/out/build/win-amd64-release --target narutorise_launcher narutorise_update_checker_test narutorise_update_installer_test narutorise_localization_test
+& app/out/build/win-amd64-release/narutorise_update_checker_test.exe
+& app/out/build/win-amd64-release/narutorise_update_installer_test.exe
+& app/out/build/win-amd64-release/narutorise_localization_test.exe
+# Optional live GitHub metadata check; does not download or run an installer:
+& app/out/build/win-amd64-release/narutorise_update_checker_test.exe --live
+# Optional full download and SHA-256 check; cleans the fixture, never runs Setup:
+& app/out/build/win-amd64-release/narutorise_update_installer_test.exe --live
+```
+
+Update tests cover version precedence, the existing numbering-reset exceptions,
+GitHub release flags, asset URL validation, persistent ignore, cache expiration,
+offline failures, and closing the checker while a request is running. Installer
+tests cover missing/invalid digests, short/oversized/corrupt downloads, cancellation,
+storage/network failures, file locking, URL policy, version revalidation, process
+detection, portable conversion consent, missing executables, and command-line handoff to a harmless test executable. Registry tests
+redirect HKCU to a private test key; they never modify an actual installation.
+
+For the full launcher UI → verification → real Inno Setup → reopened launcher
+flow, build the opt-in UI test and run the isolated validation harness:
+
+```powershell
+cmake --build app/out/build/win-amd64-release --target narutorise_launcher narutorise_update_ui_test
+python packaging/tests/validate_launcher_update.py
+python packaging/tests/validate_launcher_update.py --portable
+```
+
+This compiles private fixture installers, never a release. It uses synthetic game
+and save files, isolated registration, local fixture downloads and the actual
+launcher UI. It exercises both No/Yes confirmations, completes the real wizard,
+checks restart and data preservation, then uninstalls the test copy. GitHub HTTPS
+transport is verified separately by `--live` above. Results are retained under
+`out/update-validation-*`; see [verification results](../docs/installer-status.md#launcher-update-validation--2026-10-20).
+
+Update state is stored separately from `narutorise.toml`, in
+`%APPDATA%\NarutoRisePC\Launcher\update-check.json` (SDL's per-user preference
+directory). It is shared by installed and portable copies for that Windows user;
+each copy compares the cached release with its own installed version. Successes
+are cached for six hours, failures for fifteen minutes. Manual checks bypass
+the disk cache with a one-minute cooldown after each request. Cache failures do
+not prevent playing. The two-action notice does not use the older cached ignore
+preference, so a previously ignored release does not hide the update flow.
+
+Installer downloads use unique `updates/download-*` directories beside that cache.
+Failed/cancelled jobs remove their own file and empty staging directory. Once
+handed to Setup, the installer file is retained so Setup can reopen it during
+extraction; it may be removed after Setup has finished. Closing/killing the
+launcher during a transfer can also leave an unused staging file. Such files are
+never resumed or executed on a later launch; each attempt starts with new metadata
+and a new staging directory. Original game files and installed binaries are only
+changed by Setup, not by the downloader.
 
 ```powershell
 python packaging/tests/test_setup_helper.py -v
@@ -203,3 +307,4 @@ The native C++ launcher (`narutorise_launcher.exe`):
 - **DLC:** Imports packages or extracted content and lists the installed packs by name.
 - **Game file discovery:** Auto-detects `game/` or opens a native extracted-folder picker.
 - **Clean launch:** Persists choices to `narutorise.toml` when you play or close the launcher, launches `narutorise.exe`, and shows the installed version under the cover art.
+- **Updates:** A two-action notice for installer updates and release notes, with separate confirmations before download and execution, progress, cancellation and SHA-256 validation. Portable conversion requires explicit consent. ZIP downloads stay on the release page and require manual extraction. Network failures never block playing.

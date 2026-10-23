@@ -135,11 +135,11 @@ inline constexpr const char* kEs[] = {
     "Español",  // GameLanguageSpanish
     "Italiano",  // GameLanguageItalian
     "Personalizado (%u)",  // GameLanguageCustom
-    "Se aplica al iniciar el juego. Los textos y voces disponibles dependen de los archivos del juego.",  // GameLanguageDescription
+    "Se aplica al iniciar el juego. Las traducciones instaladas en mods aparecen aquí y solo sustituyen los textos al seleccionarlas. Las voces disponibles dependen de los archivos del juego.",  // GameLanguageDescription
     "Idioma de la interfaz del launcher",  // LauncherLanguageTooltip
     "Xenos (GPU emulada)",  // RendererXenos
-    "Nativo (Direct3D 12)",  // RendererNative
-    "El renderizador nativo dibuja el juego directamente con Direct3D 12 y es el predeterminado: más rápido y con más opciones. Xenos emula la GPU de Xbox 360 y cubre todo el juego; elígelo si algo no se ve bien con el renderizador nativo.",  // RendererDescription
+    "Nativo",  // RendererNative
+    "API gráfica del juego: Direct3D 12 o Vulkan. Se aplica al iniciar el juego.",  // RendererDescription
     "No disponible con el renderizador nativo. Elige Xenos en Renderizador para usarlo.",  // XenosOnlyReason
     "MSAA",  // MsaaLabel
     "4x (original)",  // MsaaOriginal
@@ -205,6 +205,52 @@ inline constexpr const char* kEs[] = {
     "Clic izq.",  // MouseLeftName
     "Clic der.",  // MouseRightName
     "Clic central",  // MouseMiddleName
+    "API gráfica nativa",  // NativeBackendLabel
+    "Elige Direct3D 12 o Vulkan. Requiere reiniciar el juego. Vulkan mantiene una presentación pendiente.",  // NativeBackendDescription
+    "Buscar actualizaciones",  // UpdatesCheck
+    "Buscando actualizaciones…",  // UpdatesChecking
+    "Tu versión está actualizada.",  // UpdatesCurrent
+    "No se pudo comprobar. Inténtalo más tarde.",  // UpdatesFailed
+    "No se pudo comparar la versión instalada.",  // UpdatesUnknownVersion
+    "Nueva versión disponible: %s",  // UpdatesAvailable
+    "Novedades",  // UpdatesNotes
+    "Descargar actualización",  // UpdatesDownload
+    "Instalador para Windows",  // UpdatesInstaller
+    "ZIP portátil",  // UpdatesPortable
+    "Más tarde",  // UpdatesLater
+    "Ignorar esta versión",  // UpdatesIgnore
+    "No se pudo abrir el navegador. Inténtalo de nuevo.",  // UpdatesBrowserFailed
+    "Abre la descarga en el navegador. Cierra el juego y el lanzador antes de aplicar la actualización.",  // UpdatesDownloadHint
+    "Espera. Solo se permite una comprobación por minuto.",  // UpdatesCheckCooldown
+    "Descarga manual",  // UpdatesManualDownload
+    "Descargando la actualización…",  // UpdatesDownloading
+    "Verificando la descarga…",  // UpdatesVerifying
+    "Cancelando…",  // UpdatesCancelling
+    "Cancelar",  // UpdatesCancel
+    "Descarga cancelada.",  // UpdatesCancelled
+    "Descarga verificada. El lanzador se cerrará y el instalador actualizará esta carpeta:",  // UpdatesReadyToInstall
+    "Instalar y cerrar el lanzador",  // UpdatesInstallClose
+    "La descarga falló. Comprueba la conexión e inténtalo de nuevo.",  // UpdatesDownloadFailed
+    "El archivo no superó la verificación. Descárgalo de nuevo.",  // UpdatesIntegrityFailed
+    "No se pudo confirmar la actualización. Busca de nuevo o abre su página desde Novedades.",  // UpdatesMetadataFailed
+    "No se pudo guardar la descarga. Comprueba el espacio libre y los permisos de la carpeta.",  // UpdatesStorageFailed
+    "Cierra el juego y otros lanzadores que usen esta carpeta e intenta instalar de nuevo.",  // UpdatesCloseGame
+    "No se pudo iniciar el instalador. Reinténtalo o abre su página desde Novedades.",  // UpdatesInstallFailed
+    "No se pudo guardar la configuración. Corrige los permisos del archivo antes de instalar.",  // UpdatesSaveFailed
+    "El registro de la instalación cambió. Cierra y vuelve a abrir el lanzador para intentarlo de nuevo.",  // UpdatesNotInstalled
+    "Descargar e instalar",  // UpdatesDownloadInstall
+    "Ejecutar instalador",  // UpdatesLaunchInstaller
+    "El instalador se descargará y verificará. Cuando esté listo, pediremos otra confirmación antes de cerrar el lanzador y abrir el asistente para actualizar el juego.",  // UpdatesConfirmDownload
+    "El instalador se ha descargado y verificado. ¿Quieres ejecutarlo ahora? Se guardará la configuración y se cerrará el lanzador. El asistente te guiará durante la actualización. Cierra el juego antes de continuar.",  // UpdatesConfirmInstall
+    "Esta copia es portátil. El instalador la registrará como aplicación de Windows en esta misma carpeta. Este proceso no utiliza el ZIP.",  // UpdatesPortableConversion
+    "Carpeta de instalación",  // UpdatesDestination
+    "¿Continuar con la descarga?",  // UpdatesContinue
+    "Sí",  // UpdatesYes
+    "No",  // UpdatesNo
+    "Descarga lista. Pulsa Descargar e instalar para abrir el instalador.",  // UpdatesDownloadReady
+    "Esta versión no tiene instalador para Windows. Consulta Novedades.",  // UpdatesNoInstaller
+    "Cancelar descarga",  // UpdatesCancelDownload
+    "Esta carpeta no contiene el port completo. Usa el lanzador en la carpeta que contiene narutorise.exe y narutorise_launcher.exe.",  // UpdatesMissingPortFiles
 };
 
 }  // namespace localization_strings

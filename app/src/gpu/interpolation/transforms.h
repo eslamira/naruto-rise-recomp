@@ -19,10 +19,11 @@
 // packet (P2 of the study), so the render thread does not read them.
 //
 // An engine matrix has a type word at +64; with its scale flag the fourth
-// column scales the rows, and without it the column blends as a scale of 1
-// (when the blend scales a matrix whose tick does not, the flag is written
-// with it and comes back too). The display turns some matrices in place (the
-// billboards: the indicators over the characters), so the write does not come
+// column scales the rows. The blend preserves the column's values with or
+// without the flag: the renderer also reads it when inverting the full matrix
+// for lighting. When the flag changes between ticks, the matrix stays at the
+// tick. The display turns some matrices in place (the billboards: the
+// indicators over the characters), so the write does not come
 // back; the logic of the next tick reads them (the indicators animate their
 // scale from the matrix). Where the view block only turned a written matrix,
 // the tick's scale and position go back under the turn, and a frame without
