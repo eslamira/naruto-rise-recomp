@@ -1,6 +1,7 @@
 name: Bug Report
 description: Report a problem with Naruto Rise.
 title: "[Bug]: "
+labels: ["bug"]
 body:
   - type: input
     id: version
