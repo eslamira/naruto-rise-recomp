@@ -36,11 +36,10 @@ add_subdirectory(../third_party/nlohmann_json third_party/nlohmann_json)
 # The executable keeps the Xenos plugin as the other renderer.
 option(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP "Build the native renderer next to the Xenos plugin" OFF)
 # The host graphics APIs of the native renderer, apart from the SDK's
-# REXGLUE_USE_VULKAN (the Xenos plugin's). The engine runs on D3D12; the Vulkan
-# backend is built with its host tests while its draws and presentation are
-# written.
+# REXGLUE_USE_VULKAN (the Xenos plugin's). Native builds include both APIs by
+# default, and the launcher offers the same backends as the game.
 option(NARUTORISE_NATIVE_D3D12 "Build the D3D12 backend of the native renderer" ON)
-option(NARUTORISE_NATIVE_VULKAN "Build the Vulkan backend of the native renderer" OFF)
+option(NARUTORISE_NATIVE_VULKAN "Build the Vulkan backend of the native renderer" ON)
 if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP AND NOT NARUTORISE_NATIVE_D3D12 AND NOT NARUTORISE_NATIVE_VULKAN)
     message(FATAL_ERROR "Enable at least one native backend: NARUTORISE_NATIVE_D3D12 or NARUTORISE_NATIVE_VULKAN")
 endif()
