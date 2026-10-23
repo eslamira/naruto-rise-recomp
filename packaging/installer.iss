@@ -330,7 +330,8 @@ end;
 function IsRenumberedBetaVersion(const Version: String): Boolean;
 begin
   Result := (Version = '0.1.0-beta.2') or (Version = '0.1.0-beta.3') or
-    (Version = '0.2.0-beta.1') or (Version = '0.2.0-beta.2');
+    (Version = '0.2.0-beta.1') or (Version = '0.2.0-beta.2') or
+    (Version = '0.3.0-beta');
 end;
 
 function DestinationError: String;
@@ -352,9 +353,9 @@ begin
   end;
   if not IsExistingInstallation(WizardDirValue) then Exit;
   PreviousVersion := InstalledVersion(WizardDirValue);
-  { Betas 2 and 3 of 0.1.0 and betas 1 and 2 of 0.2.0 replace beta 1's shipped
-    1.0.0-beta.1 label, the old 1.0.0 label and local 1.0.1/1.0.2 builds.
-    Scope the numbering reset to these releases; other versions still use the
+  { Betas 2 and 3 of 0.1.0, betas 1 and 2 of 0.2.0 and 0.3.0-beta replace
+    beta 1's shipped 1.0.0-beta.1 label, the old 1.0.0 label and local
+    1.0.1/1.0.2 builds. Scope the numbering reset to these releases; other versions still use the
     normal downgrade check. Reject the reverse transition as well. }
   if IsRenumberedBetaVersion('{#MyAppVersion}') and
     IsSupersededVersion(PreviousVersion) then
