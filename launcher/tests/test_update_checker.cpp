@@ -72,6 +72,8 @@ int main(int argc, char* argv[]) {
     for (const auto* bad : {"", "unknown", "1.2", "01.2.3", "1.2.3-beta.01", "1.2.3/evil", "1.2.3\n"})
       Require(!CompareVersions(bad, "1.2.3"), "Accepted malformed version");
     Require(IsNewerRelease("1.0.0-beta.1", "v0.2.0-beta.2") == true, "Legacy migration missing");
+    Require(IsNewerRelease("1.0.0", "v0.3.0-beta") == true, "Legacy migration to 0.3.0-beta missing");
+    Require(IsNewerRelease("0.2.0-beta.2", "v0.3.0-beta") == true, "0.3.0-beta not newer than 0.2.0-beta.2");
     Require(IsNewerRelease("0.2.0-beta.2", "v1.0.0-beta.1") == false, "Reverse legacy migration allowed");
     Require(IsNewerRelease("2.0.0", "v0.2.0-beta.2") == false, "Downgrade offered");
     Require(IsNewerRelease("v0.2.0-beta.2", "0.2.0-beta.2") == false, "Same version offered");

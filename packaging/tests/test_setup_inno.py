@@ -359,7 +359,8 @@ class InnoSetupTests(unittest.TestCase):
                     self.assert_user_files(files)
 
     def test_update_compares_numeric_versions(self):
-        if self.current_version in ("0.1.0-beta.2", "0.1.0-beta.3", "0.2.0-beta.1", "0.2.0-beta.2"):
+        if self.current_version in ("0.1.0-beta.2", "0.1.0-beta.3", "0.2.0-beta.1", "0.2.0-beta.2",
+                                    "0.3.0-beta"):
             for previous_version in ("1.0.0-beta.1", "1.0.0", "1.0.1", "1.0.2"):
                 with self.subTest(previous_version=previous_version):
                     for name in ("narutorise.exe", "narutorise_launcher.exe"):

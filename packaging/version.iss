@@ -1,2 +1,2 @@
 ; Single default version shared by the setup and packaging script.
-#define MyAppVersion "0.2.0-beta.2"
+#define MyAppVersion "0.3.0-beta"
