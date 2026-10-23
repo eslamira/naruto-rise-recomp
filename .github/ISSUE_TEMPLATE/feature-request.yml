@@ -1,6 +1,7 @@
 name: Feature Request
 description: Suggest a feature or improvement for Naruto Rise.
 title: "[Feature Request]: "
+labels: ["feature request"]
 body:
   - type: textarea
     id: problem
