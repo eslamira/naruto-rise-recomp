@@ -18,6 +18,7 @@
 #include "texture_loader.h"
 #include "ui.h"
 #include "theme.h"
+#include "wine.h"
 
 #include <filesystem>
 #include <iostream>
@@ -116,6 +117,12 @@ int main(int argc, char* argv[]) {
 
   GameConfig config;
   ConfigManager::Load(toml_path, config);
+  // Under Wine (Proton) the game runs the native renderer on Vulkan only
+  // (app/src/gpu/settings.cpp): the option shows and saves Vulkan there.
+  if (kNativeVulkanBuilt && narutorise::WineVersion() && config.native_backend != "vulkan") {
+    config.native_backend = "vulkan";
+    config.graphics_device.clear();  // Device names are enumerated separately by each API.
+  }
 
   // Initialize localization (English by default, or loaded from config)
   Localization::SetLanguageCode(config.launcher_language);

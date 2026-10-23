@@ -19,6 +19,7 @@ set(LAUNCHER_SOURCES
     src/graphics_devices.cpp
     src/game_languages.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../app/src/mods/translation_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../app/src/wine.cpp
     src/key_bindings.cpp
     src/key_names.cpp
     src/localization.cpp

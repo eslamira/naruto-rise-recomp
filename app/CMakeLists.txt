@@ -24,6 +24,7 @@ set(NARUTORISE_SOURCES
     src/graphics_device.cpp
     src/crash_report.cpp
     src/window_title.cpp
+    src/wine.cpp
     src/mouse_camera.cpp
     src/mods/translation_data.cpp
     src/mods/translation_mod.cpp

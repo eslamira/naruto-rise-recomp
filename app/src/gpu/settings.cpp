@@ -3,6 +3,7 @@
 // runs, the presenter cvars of rexruntime.dll read by name, and the journal
 // fields of the options in use.
 #include "gpu/settings.h"
+#include "wine.h"
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -245,6 +246,12 @@ void LoadSettings() {
   s.frame_rate = uint32_t(std::clamp(REXCVAR_GET(frame_rate), 30, 240));
   s.graphics_device = REXCVAR_GET(graphics_device);
   s.native_backend = REXCVAR_GET(native_backend);
+#if defined(NARUTORISE_NATIVE_VULKAN)
+  // Under Wine (Proton), Direct3D 12 runs through vkd3d-proton, and the game
+  // closes there at startup; Vulkan goes to the driver directly. So Vulkan,
+  // whatever the configuration says.
+  if (narutorise::WineVersion()) s.native_backend = "vulkan";
+#endif
   if (rex::cvar::GetFlagInfo("d3d12_allow_variable_refresh_rate_and_tearing"))
     s.allow_tearing = rex::cvar::Query<bool>("d3d12_allow_variable_refresh_rate_and_tearing");
   // fsr2 and fsr3 are the SDK's temporal upscalers, not covered: they keep bilinear.
