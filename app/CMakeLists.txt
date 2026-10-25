@@ -64,6 +64,8 @@ if(NARUTORISE_NATIVE_RENDERER_BOOTSTRAP)
          src/gpu/shaders/shaders.cpp src/gpu/shaders/package.cpp src/gpu/shaders/pipelines.cpp
          src/gpu/textures/textures.cpp src/gpu/textures/write_watch.cpp src/gpu/textures/formats.cpp
          src/gpu/textures/layout.cpp
+         # Keyboard button icons, rewritten in guest memory for both renderers.
+         src/mods/button_icons.cpp src/mods/key_icon.cpp
          src/gpu/buffers/buffers.cpp src/gpu/buffers/vertex_layout.cpp
          src/gpu/diagnostics/frame_state.cpp src/gpu/diagnostics/census.cpp
          src/gpu/diagnostics/frame_trace.cpp src/gpu/diagnostics/start_evidence.cpp
@@ -111,6 +113,11 @@ target_link_libraries(narutorise_translation_test PRIVATE rex::runtime narutoris
 add_executable(narutorise_key_prompts_test EXCLUDE_FROM_ALL
     tests/key_prompts_test.cpp src/mods/key_prompts.cpp)
 target_include_directories(narutorise_key_prompts_test PRIVATE src)
+
+# The icons' image functions and the guest texture read/write; the SDK's stb_truetype.
+add_executable(narutorise_key_icon_test EXCLUDE_FROM_ALL
+    tests/key_icon_test.cpp src/mods/key_icon.cpp src/gpu/textures/formats.cpp)
+target_include_directories(narutorise_key_icon_test PRIVATE src ${CMAKE_CURRENT_SOURCE_DIR}/../sdk/thirdparty/imgui)
 
 add_executable(narutorise_validate_translation_package EXCLUDE_FROM_ALL
     ../tools/localization/validate-package.cpp src/mods/translation_data.cpp)

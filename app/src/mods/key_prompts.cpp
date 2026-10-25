@@ -159,6 +159,22 @@ std::string KeyLabel(std::string_view key_name) {
   }
 }
 
+std::string ShortKeyLabel(std::string_view key_name) {
+  constexpr std::pair<std::string_view, std::string_view> kShort[] = {
+      {"Left Click", "LMB"},     {"Right Click", "RMB"},  {"Middle Click", "MMB"},
+      {"Backspace", "Bksp"},     {"Page Up", "PgUp"},      {"Page Down", "PgDn"},
+      {"Caps Lock", "Caps"},     {"Num Lock", "NumLk"},    {"Scroll Lock", "ScrLk"},
+      {"Print Screen", "PrtSc"}, {"Left Bracket", "["},    {"Right Bracket", "]"},
+      {"Delete", "Del"},         {"Insert", "Ins"},
+  };
+  std::string label = KeyLabel(key_name);
+  for (const auto& [from, to] : kShort) {
+    for (size_t at; (at = label.find(from)) != std::string::npos;)
+      label.replace(at, from.size(), to);
+  }
+  return label;
+}
+
 std::string FirstKey(std::string_view value) {
   while (!value.empty()) {
     const size_t comma = value.find(',');

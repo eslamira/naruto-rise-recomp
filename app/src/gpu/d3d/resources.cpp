@@ -11,6 +11,7 @@
 #include "gpu/textures/textures.h"
 #include "gpu/buffers/buffers.h"
 #include "gpu/settings.h"
+#include "mods/button_icons.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -352,15 +353,24 @@ REX_HOOK_RAW(sub_8212C7E8) {
 // their pages and uploads a texture (NoteUnlock).
 extern "C" void __imp__sub_8212DBE0(PPCContext& __restrict, uint8_t*);
 REX_HOOK_RAW(sub_8212DBE0) {
-  if (!gpu::Active()) { __imp__sub_8212DBE0(ctx, base); return; }
-  HookScope scope("DBE0-Unlock");
   const uint32_t resource = ctx.r3.u32, base_address = ctx.r4.u32, mip_address = ctx.r5.u32;
-  const uint32_t common = Get32(base, resource), lines = Get32(base, resource + 0x14);
+  const uint32_t common = Get32(base, resource);
+  if (!gpu::Active()) {
+    // Xenos: the button icons are rewritten in guest memory, before its
+    // texture cache reads them.
+    __imp__sub_8212DBE0(ctx, base);
+    if ((common & 0xF00) == 0x100) narutorise::button_icons::OnUnlock(base, resource);
+    return;
+  }
+  HookScope scope("DBE0-Unlock");
+  const uint32_t lines = Get32(base, resource + 0x14);
   const uint32_t mip_lines = Get32(base, resource + 0x18);
   PPCContext entry = ctx;
   __imp__sub_8212DBE0(ctx, base);
   if ((common & 0xF00) == 0x100) {  // The last Unlock.
     gpu::profile::Timer hook_time(gpu::profile::kHookUnlock);
+    // Before NoteUnlock reads the content for the upload.
+    narutorise::button_icons::OnUnlock(base, resource);
     NoteUnlock(entry, base, resource, common, base_address, lines, mip_address, mip_lines);
   }
 }

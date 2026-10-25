@@ -27,6 +27,10 @@ std::span<const std::string_view> BindOptions();
 // "Shift+Up" -> "Shift+Up". Unknown names are shown unchanged.
 std::string KeyLabel(std::string_view key_name);
 
+// The text of a key name for a small icon: KeyLabel, with the long names
+// shortened ("LMB" stays "LMB", "Backspace" -> "Bksp", "Page Up" -> "PgUp").
+std::string ShortKeyLabel(std::string_view key_name);
+
 // The first non-empty key of a comma-separated keybind value; empty for an
 // unbound input ("", "None").
 std::string FirstKey(std::string_view value);

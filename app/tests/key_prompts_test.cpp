@@ -58,6 +58,10 @@ void KeyLabelTests() {
   Equal(KeyLabel("Shift+Up"), "Shift+Up", "combination");
   Equal(KeyLabel("Control+Quote"), "Ctrl+'", "combination labels each key");
   Equal(KeyLabel("Mystery"), "Mystery", "unknown name kept");
+  Equal(ShortKeyLabel("LMB"), "LMB", "short mouse label");
+  Equal(ShortKeyLabel("Backspace"), "Bksp", "short backspace");
+  Equal(ShortKeyLabel("Control+PageUp"), "Ctrl+PgUp", "short combination");
+  Equal(ShortKeyLabel("Space"), "Space", "short keeps plain names");
 }
 
 void FirstKeyTests() {

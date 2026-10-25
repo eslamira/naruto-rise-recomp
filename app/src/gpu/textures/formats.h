@@ -72,6 +72,11 @@ struct GuestLevel {
 // element size: 8 bpb never, 16 bpb in 8in16 only, 32 bpb and larger in every
 // mode). False: a block past region_bytes (the out vector is then incomplete).
 bool ReadGuestLevel(const GuestLevel& level, std::vector<uint8_t>& out);
+// The inverse of ReadGuestLevel: writes width_blocks x height_blocks blocks
+// (row after row, as ReadGuestLevel returns them) into the level's place,
+// tiled and endian-swapped back. memory must be writable. False: a block past
+// region_bytes (nothing is written then) or blocks of the wrong size.
+bool WriteGuestLevel(const GuestLevel& level, const std::vector<uint8_t>& blocks, uint8_t* memory);
 // The guest blocks of a level (after the endian swap) as host blocks.
 void ConvertTexels(TexelConversion conversion, std::vector<uint8_t>& texels);
 // A level of width_blocks x height_blocks guest blocks as its host data: the

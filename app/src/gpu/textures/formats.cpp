@@ -113,6 +113,38 @@ bool ReadGuestLevel(const GuestLevel& level, std::vector<uint8_t>& out) {
   return true;
 }
 
+bool WriteGuestLevel(const GuestLevel& level, const std::vector<uint8_t>& blocks, uint8_t* memory) {
+  const uint32_t bpb = level.bytes_per_block, log2_bpp = Log2Ceil(bpb);
+  const uint32_t mode = bpb == 1 ? 0 : bpb == 2 ? (level.endian == 1 ? 1 : 0) : level.endian;
+  if (bpb > 16 || blocks.size() != size_t(level.width_blocks) * level.height_blocks * bpb) return false;
+  // The places first, so a range error writes nothing.
+  std::vector<uint32_t> places(size_t(level.width_blocks) * level.height_blocks);
+  for (uint32_t y = 0, i = 0; y < level.height_blocks; ++y) {
+    const uint32_t row = level.y0_blocks + y;
+    const uint32_t outer = TiledOffset2DOuter(row, level.pitch_blocks, log2_bpp);
+    for (uint32_t x = 0; x < level.width_blocks; ++x, ++i) {
+      const uint32_t column = level.x0_blocks + x;
+      const uint32_t at = level.tiled ? (TiledOffset2DInner(column, row, log2_bpp, outer) >> log2_bpp) << log2_bpp
+                                      : row * level.row_pitch_bytes + column * bpb;
+      if (at + bpb > level.region_bytes) return false;
+      places[i] = at;
+    }
+  }
+  uint8_t block[16];
+  for (size_t i = 0; i < places.size(); ++i) {
+    std::memcpy(block, blocks.data() + i * bpb, bpb);
+    // Each swap is its own inverse.
+    if (mode == 1)
+      for (uint32_t k = 0; k < bpb; k += 2) std::swap(block[k], block[k + 1]);
+    else if (mode == 2)
+      for (uint32_t k = 0; k < bpb; k += 4) std::swap(block[k], block[k + 3]), std::swap(block[k + 1], block[k + 2]);
+    else if (mode == 3)
+      for (uint32_t k = 0; k < bpb; k += 4) std::swap(block[k], block[k + 2]), std::swap(block[k + 1], block[k + 3]);
+    std::memcpy(memory + places[i], block, bpb);
+  }
+  return true;
+}
+
 namespace {
 // The DXT decoders of the SDK's load shaders (texture_load_dxt*_cs): the 565
 // endpoints widened to 888 by bit replication, the interpolated colors and
